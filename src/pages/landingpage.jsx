@@ -5,20 +5,25 @@ import { useNavigate } from "react-router-dom";
 const LandingPage = () => {
   const navigate = useNavigate();
   return (
-    <div className="landing-page flex flex-col items-center justify-center min-h-screen bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 p-6">
-      <h1 className="text-4xl md:text-5xl font-extrabold mb-12 text-gray-800 text-center">
+    <div className="landing-page flex flex-col items-center justify-center min-h-screen bg-gray-50 p-6">
+      <h1 className="heading text-3xl md:text-5xl font-extrabold mb-8 text-gray-800 text-center tracking-tight">
         Rental Property Management System
       </h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-6xl">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl">
         {/* Admin Card */}
-        <div className="portal-card admin border-red-500 hover:scale-105 transition-transform duration-300">
-          <h2 className="text-2xl font-semibold mb-4">Admin Portal</h2>
-          <p className="text-gray-600 mb-6">
-            Manage users, view reports, and control the system.
-          </p>
+        <div className="portal-card admin flex flex-col justify-between hover:shadow-2xl transition-all duration-300">
+          <div>
+            <h2 className="text-xl font-bold mb-3 text-gray-800">
+              Admin Portal
+            </h2>
+            <p className="text-sm text-gray-600 mb-6">
+              Manage users, view reports, and control the entire system
+              securely.
+            </p>
+          </div>
           <button
-            className="portal-btn bg-red-500 hover:bg-red-600 text-white font-semibold px-6 py-2 rounded-lg shadow-lg transition-colors duration-300"
+            className="portal-btn bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 rounded-lg shadow-md"
             onClick={() =>
               navigate("/signup", { state: { selectedRole: "Admin" } })
             }
@@ -28,32 +33,41 @@ const LandingPage = () => {
         </div>
 
         {/* Manager Card */}
-        <div className="portal-card manager border-blue-500 hover:scale-105 transition-transform duration-300">
-          <h2 className="text-2xl font-semibold mb-4">Manager Portal</h2>
-          <p className="text-gray-600 mb-6">
-            Add properties, track tenants, and manage listings.
-          </p>
+        <div className="portal-card manager flex flex-col justify-between hover:shadow-2xl transition-all duration-300">
+          <div>
+            <h2 className="text-xl font-bold mb-3 text-gray-800">
+              Manager Portal
+            </h2>
+            <p className="text-sm text-gray-600 mb-6">
+              Add properties, track tenants, and manage your listings
+              efficiently.
+            </p>
+          </div>
           <button
+            className="portal-btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-2.5 rounded-lg shadow-md"
             onClick={() =>
               navigate("/signup", { state: { selectedRole: "Manager" } })
             }
-            className="portal-btn bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-2 rounded-lg shadow-lg transition-colors duration-300  "
           >
             Login as Manager
           </button>
         </div>
 
         {/* Tenant Card */}
-        <div className="portal-card tenant border-green-500 hover:scale-105 transition-transform duration-300">
-          <h2 className="text-2xl font-semibold mb-4">Tenant Portal</h2>
-          <p className="text-gray-600 mb-6">
-            View payments, rent history, and maintenance requests.
-          </p>
+        <div className="portal-card tenant flex flex-col justify-between hover:shadow-2xl transition-all duration-300">
+          <div>
+            <h2 className="text-xl font-bold mb-3 text-gray-800">
+              Tenant Portal
+            </h2>
+            <p className="text-sm text-gray-600 mb-6">
+              View payments, rent history, and submit maintenance requests.
+            </p>
+          </div>
           <button
+            className="portal-btn bg-green-500 hover:bg-green-600 text-white font-bold py-2.5 rounded-lg shadow-md"
             onClick={() =>
               navigate("/signup", { state: { selectedRole: "Tenant" } })
             }
-            className="portal-btn bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-2 rounded-lg shadow-lg transition-colors duration-300"
           >
             Login as Tenant
           </button>

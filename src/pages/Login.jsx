@@ -1,78 +1,9 @@
-// import React, { useState } from "react";
-// import axios from "axios";
-// import { toast, Toaster } from "react-hot-toast";
-// import { useNavigate } from "react-router-dom";
-// import "./Login.css"; // CSS hum abhi niche banayenge
-
-// const Login = () => {
-//   const [email, setEmail] = useState("");
-//   const [password, setPassword] = useState("");
-//   const navigate = useNavigate();
-
-//   const handleLogin = async (e) => {
-//     e.preventDefault();
-//     try {
-//       const res = await axios.post("http://localhost:8000/api/auth/login", {
-//         email,
-//         password,
-//       });
-
-//       // 1. Token aur User Info save karein
-//       localStorage.setItem("token", res.data.token);
-//       localStorage.setItem("userRole", res.data.user.role);
-//       localStorage.setItem("userName", res.data.user.name);
-
-//       toast.success(`Welcome back, ${res.data.user.name}!`);
-
-//       // 2. Role-Based Redirect (PDF Requirement)
-//       setTimeout(() => {
-//         if (res.data.user.role === "Admin") navigate("/admin-dashboard");
-//         else if (res.data.user.role === "Manager")
-//           navigate("/manager-dashboard");
-//         else navigate("/tenant-dashboard");
-//       }, 1500);
-//     } catch (err) {
-//       toast.error(err.response?.data?.message || "Invalid Credentials");
-//     }
-//   };
-
-//   return (
-//     <div className="login-container">
-//       <Toaster />
-//       <div className="login-card">
-//         <h2>Login to Your Account</h2>
-//         <form onSubmit={handleLogin}>
-//           <input
-//             type="email"
-//             placeholder="Email Address"
-//             onChange={(e) => setEmail(e.target.value)}
-//             required
-//           />
-//           <input
-//             type="password"
-//             placeholder="Password"
-//             onChange={(e) => setPassword(e.target.value)}
-//             required
-//           />
-//           <button type="submit" className="login-btn">
-//             Login
-//           </button>
-//         </form>
-//         <p>
-//           Don't have an account?{" "}
-//           <span onClick={() => navigate("/signup")}>Sign Up</span>
-//         </p>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default Login;
-
 import React, { useState } from "react";
 import axios from "axios";
 import { toast, Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+// Icons Import karein
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import {
   MDBBtn,
   MDBContainer,
@@ -86,6 +17,8 @@ import {
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  // Password visibility state
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -99,7 +32,6 @@ const Login = () => {
       localStorage.setItem("userRole", res.data.user.role);
       toast.success("Login Successful!");
 
-      // Role ke mutabiq bhej dain
       setTimeout(() => {
         if (res.data.user.role === "Admin") navigate("/admin-dashboard");
         else if (res.data.user.role === "Manager")
@@ -127,13 +59,36 @@ const Login = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
-                <MDBInput
-                  wrapperClass="mb-4"
-                  label="Password"
-                  type="password"
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+
+                {/* Password Input with Icons */}
+                <div style={{ position: "relative" }}>
+                  <MDBInput
+                    wrapperClass="mb-4"
+                    label="Password"
+                    type={showPassword ? "text" : "password"}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                  {/* Icon Toggle Button */}
+                  <span
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      position: "absolute",
+                      right: "15px",
+                      top: "10px",
+                      cursor: "pointer",
+                      zIndex: 10,
+                      color: "#666",
+                    }}
+                  >
+                    {showPassword ? (
+                      <FaEyeSlash size={20} />
+                    ) : (
+                      <FaEye size={20} />
+                    )}
+                  </span>
+                </div>
+
                 <MDBBtn className="w-100 mb-4" size="md" type="submit">
                   Sign In
                 </MDBBtn>

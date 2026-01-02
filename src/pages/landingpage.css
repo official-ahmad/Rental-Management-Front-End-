@@ -1,29 +1,66 @@
 
+.landing-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  padding: 20px;
+}
+
+.heading {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #2c3e50;
+  font-weight: 700;
+  font-style: italic;
+  margin-bottom: 40px; 
+  font-size: 2.5rem;
+}
+
+.cards-container {
+  display: flex;
+  gap: 30px; 
+  justify-content: center;
+  flex-wrap: wrap; 
+}
+
 .portal-card {
   background: #fff;
-  padding: 2rem;
-  border-top-width: 4px;
-  border-radius: 1rem;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+  padding: 2.5rem 1.5rem; 
+  border-top: 5px solid; 
+  border-radius: 15px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.05);
   text-align: center;
-  transition: all 0.3s;
+  width: 320px; 
+  transition: transform 0.3s ease;
 }
 
 .portal-card:hover {
-  box-shadow: 0 15px 25px rgba(0,0,0,0.2);
+  transform: translateY(-10px);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.1);
 }
+.admin { border-top-color: #ef4444; }
+.manager { border-top-color: #3b82f6; }
+.tenant { border-top-color: #10b981; }
 
 .portal-btn {
-  cursor: pointer;
+  margin-top: 20px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  border: none;
+  padding: 10px 25px;
+  transition: 0.3s;
+  border-radius: 7px;
 }
-
-/* Optional: Add subtle gradient backgrounds for each portal card */
-.admin {
-  border-top-color:red 
+.portal-card {
+  background: #ffffff;
+  padding: 2.5rem 2rem;
+  border-top: 6px solid; 
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  min-height: 280px; 
 }
-.manager {
-  border-top-color: #3b82f6; /* blue */
-}
-.tenant {
-  border-top-color: #10b981; /* green */
-}
+.admin { border-top-color: #ef4444; }
+.manager { border-top-color: #3b82f6; }
+.tenant { border-top-color: #10b981; }
