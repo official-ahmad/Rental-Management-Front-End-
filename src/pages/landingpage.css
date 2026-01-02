@@ -1,0 +1,29 @@
+
+.portal-card {
+  background: #fff;
+  padding: 2rem;
+  border-top-width: 4px;
+  border-radius: 1rem;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+  text-align: center;
+  transition: all 0.3s;
+}
+
+.portal-card:hover {
+  box-shadow: 0 15px 25px rgba(0,0,0,0.2);
+}
+
+.portal-btn {
+  cursor: pointer;
+}
+
+/* Optional: Add subtle gradient backgrounds for each portal card */
+.admin {
+  border-top-color:red 
+}
+.manager {
+  border-top-color: #3b82f6; /* blue */
+}
+.tenant {
+  border-top-color: #10b981; /* green */
+}
