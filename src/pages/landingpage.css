@@ -33,24 +33,20 @@
   box-shadow: 0 8px 30px rgba(0,0,0,0.05);
   text-align: center;
   width: 320px; 
-  transition: transform 0.3s ease;
+  transition: 0.3s ease;
 }
 
 .portal-card:hover {
-  transform: translateY(-10px);
   box-shadow: 0 15px 35px rgba(0,0,0,0.1);
 }
-.admin { border-top-color: #ef4444; }
-.manager { border-top-color: #3b82f6; }
-.tenant { border-top-color: #10b981; }
 
 .portal-btn {
-  margin-top: 20px;
+  /* margin-top: 20px; */
   font-weight: 600;
   letter-spacing: 0.5px;
   border: none;
   padding: 10px 25px;
-  transition: 0.3s;
+  /* transition: 0.3s; */
   border-radius: 7px;
 }
 .portal-card {
@@ -61,6 +57,26 @@
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
   min-height: 280px; 
 }
-.admin { border-top-color: #ef4444; }
-.manager { border-top-color: #3b82f6; }
-.tenant { border-top-color: #10b981; }
+
+.button{
+  border-radius: 15px;
+  font-size: 1.1rem;
+  padding: 10px;
+  transition: all 0.5s ease-in-out;
+  cursor: pointer
+}
+.button:active {
+  transform: scale(0.95);
+}
+.button:hover {
+  filter: brightness(1.1);
+}
+.portal-btn {
+  margin-top: 20px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  border: none;
+  padding: 10px 25px;
+  transition: 0.3s;
+  border-radius: 7px;
+}

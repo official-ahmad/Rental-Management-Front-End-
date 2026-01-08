@@ -35,7 +35,6 @@ const AdminDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
 
-  // Sample users
   const [users, setUsers] = useState([
     {
       id: "#001",

@@ -245,7 +245,6 @@ const TenantDashboard = () => {
       </MDBModal>
 
       <MDBContainer className="py-5">
-        {/* Header Section */}
         <header className="mb-5 text-center">
           <h2 className="fw-bold text-primary">My Rental Overview</h2>
           <p className="text-muted">
@@ -253,7 +252,6 @@ const TenantDashboard = () => {
           </p>
         </header>
 
-        {/* Enhanced Status Cards */}
         <MDBRow className="mb-4">
           <StatusCard
             icon={<FaHome />}
