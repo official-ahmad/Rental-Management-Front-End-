@@ -59,6 +59,21 @@ const TenantDashboard = () => {
   const [property, setProperty] = useState(null);
   const [rentHistory, setRentHistory] = useState([
     { month: "December 2025", amount: "$1,450.00", status: "Paid" },
+    { month: "January 2026", amount: "$1,500.00", status: "Paid" },
+    { month: "February 2026", amount: "$1,500.00", status: "Due" },
+    { month: "March 2026", amount: "$1,500.00", status: "Paid" },
+    { month: "April 2026", amount: "$1,500.00", status: "Due" },
+    { month: "May 2026", amount: "$1,500.00", status: "Due" },
+    { month: "June 2026", amount: "$1,500.00", status: "Due" },
+    { month: "July 2026", amount: "$1,500.00", status: "Due" },
+    { month: "August 2026", amount: "$1,500.00", status: "Due" },
+    { month: "September 2026", amount: "$1,500.00", status: "Due" },
+    { month: "October 2026", amount: "$1,500.00", status: "Due" },
+    { month: "November 2026", amount: "$1,500.00", status: "Due" },
+    { month: "December 2026", amount: "$1,500.00", status: "Due" },
+    { month: "January 2027", amount: "$1,500.00", status: "Due" },
+    { month: "February 2027", amount: "$1,500.00", status: "Due" },
+    { month: "March 2027", amount: "$1,500.00", status: "Due" },
   ]);
 
   useEffect(() => {
@@ -263,7 +278,7 @@ const TenantDashboard = () => {
             color="#007bff"
             progress={property ? 100 : 0}
             tooltip="View property details"
-            onClick={() => toast("Property details viewing...")} // Fixed: Changed toast.info to toast
+            onClick={() => toast("Property details viewing...")}
           />
           <StatusCard
             icon={<FaFileInvoiceDollar />}
@@ -273,7 +288,7 @@ const TenantDashboard = () => {
             color="#dc3545"
             progress={75}
             tooltip="Pay your rent now"
-            onClick={() => toast("Redirecting to Payments...")} // Fixed: Changed toast.info to toast
+            onClick={() => toast("Redirecting to Payments...")}
           />
           <StatusCard
             icon={<FaTools />}
@@ -287,7 +302,6 @@ const TenantDashboard = () => {
           />
         </MDBRow>
 
-        {/* Quick Action Buttons */}
         <MDBCard className="shadow-2 border-0 mb-5" style={cardStyle}>
           <MDBCardBody className="p-4">
             <h5 className="fw-bold mb-4 text-dark">Quick Actions</h5>
@@ -348,7 +362,7 @@ const TenantDashboard = () => {
                   <th>Month</th>
                   <th>Amount</th>
                   <th>Status</th>
-                  <th>Actions</th>
+                  {/* <th>Actions</th> */}
                 </tr>
               </MDBTableHead>
               <MDBTableBody>
@@ -367,13 +381,6 @@ const TenantDashboard = () => {
                         >
                           {item.status}
                         </span>
-                      </td>
-                      <td>
-                        <MDBTooltip tag="span" title="View Receipt">
-                          <MDBBtn color="link" size="sm">
-                            <FaEye />
-                          </MDBBtn>
-                        </MDBTooltip>
                       </td>
                     </tr>
                   ))

@@ -5,18 +5,16 @@ import "./App.css";
 import LandingPage from "./pages/landingpage";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-// Dashboards import karein (Jab aap file bana lein)
-// import AdminDashboard from "./pages/AdminDashboard";
-// import ManagerDashboard from "./pages/ManagerDashboard";
-// import TenantDashboard from "./pages/TenantDashboard";
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Home from "./pages/Home";
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/page" element={<LandingPage />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
 

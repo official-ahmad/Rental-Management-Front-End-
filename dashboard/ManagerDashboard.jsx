@@ -62,7 +62,7 @@ const ManagerDashboard = () => {
       toast.error("Access denied. Please login as Manager");
       navigate("/login", { replace: true });
     } else {
-      setTimeout(() => setLoading(false), 800); // simulate loading
+      setTimeout(() => setLoading(false), 800);
     }
   }, [role, navigate]);
 
@@ -110,7 +110,6 @@ const ManagerDashboard = () => {
     >
       <Toaster position="top-right" />
 
-      {/* Sidebar */}
       <div
         style={{
           width: sidebarOpen ? "250px" : "60px",
@@ -149,10 +148,8 @@ const ManagerDashboard = () => {
         </div>
       </div>
 
-      {/* Main Content */}
       <div style={{ flex: 1, backgroundColor: "#f8f9fa", padding: "20px" }}>
         <MDBContainer fluid>
-          {/* Header */}
           <div className="d-flex justify-content-between align-items-center mb-4">
             <div>
               <h2 className="fw-bold text-primary">Property Dashboard</h2>
@@ -202,7 +199,6 @@ const ManagerDashboard = () => {
             </MDBCol>
           </MDBRow>
 
-          {/* Search */}
           <MDBRow className="mb-3">
             <MDBCol md="6">
               <MDBInput
@@ -213,7 +209,6 @@ const ManagerDashboard = () => {
             </MDBCol>
           </MDBRow>
 
-          {/* Properties Table */}
           <MDBCard>
             <MDBCardBody>
               <h5 className="mb-3">Recently Added Properties</h5>
@@ -224,7 +219,7 @@ const ManagerDashboard = () => {
                     <th>Location</th>
                     <th>Rent</th>
                     <th>Status</th>
-                    <th>Action</th>
+                    {/* <th>Action</th> */}
                   </tr>
                 </MDBTableHead>
                 <MDBTableBody>
@@ -250,11 +245,11 @@ const ManagerDashboard = () => {
                         </span>
                       </td>
                       <td>
-                        <MDBTooltip tag="span" title="View Details">
+                        {/* <MDBTooltip tag="span" title="View Details">
                           <MDBBtn color="link" size="sm">
                             <FaEye />
                           </MDBBtn>
-                        </MDBTooltip>
+                        </MDBTooltip> */}
                       </td>
                     </tr>
                   ))}
