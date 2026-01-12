@@ -61,7 +61,7 @@ const HeroSection = styled.div`
   }
 `;
 
-// --- NAYA SECTION: LOGIN/SIGNUP BUTTONS STYLING ---
+// --- LOGIN/SIGNUP BUTTONS STYLING ---
 const TopNav = styled.div`
   position: absolute;
   top: 25px;
@@ -279,6 +279,14 @@ const Home = () => {
     fetchProperties();
   }, []);
 
+  // --- NAYA LOGIC: Rent Now Click Handler ---
+  const handleRentNow = (prop) => {
+    // 1. Property ka poora data memory mein save karein
+    localStorage.setItem("selectedProperty", JSON.stringify(prop));
+    // 2. Selection page par navigate karein
+    navigate("/page");
+  };
+
   const filteredProperties = properties.filter(
     (prop) =>
       prop.propertyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -288,7 +296,6 @@ const Home = () => {
   return (
     <div style={{ backgroundColor: "#f8f9fa", minHeight: "100vh" }}>
       <HeroSection>
-        {/* --- LOGIN / SIGNUP BUTTONS --- */}
         <TopNav>
           <button
             className="nav-btn login-btn"
@@ -391,9 +398,10 @@ const Home = () => {
                       </div>
                       <div className="mt-auto">
                         <ButtonWrapper>
+                          {/* Yahan handleRentNow call kiya hai */}
                           <button
                             className="animated-button"
-                            onClick={() => navigate("/page")}
+                            onClick={() => handleRentNow(prop)}
                           >
                             <span className="text">Rent Now</span>
                             <span className="circle" />

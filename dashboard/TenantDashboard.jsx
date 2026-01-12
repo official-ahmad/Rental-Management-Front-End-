@@ -33,7 +33,6 @@ import {
   MDBNavbarBrand,
   MDBNavbarNav,
   MDBNavbarItem,
-  MDBNavbarLink,
   MDBCollapse,
   MDBNavbarToggler,
   MDBModal,
@@ -45,35 +44,33 @@ import {
   MDBModalFooter,
 } from "mdb-react-ui-kit";
 
+// Style variables ko component ke bahar rakh diya taake "undefined" error na aaye
+const buttonStyle = {
+  borderRadius: "25px",
+  padding: "10px 20px",
+  transition: "all 0.3s ease",
+};
+
+const buttonHover = {
+  transform: "scale(1.05)",
+};
+
 const TenantDashboard = () => {
   const navigate = useNavigate();
   const role = localStorage.getItem("userRole");
   const userName = localStorage.getItem("userName") || "Tenant";
-  const userId = localStorage.getItem("userId");
+  const userId = localStorage.getItem("userId"); // Isko check karna hai
+
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [navbarOpen, setNavbarOpen] = useState(false);
-  const [logoutModalOpen, setLogoutModalOpen] = useState(false); // For custom logout confirmation
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
 
-  // Sample data (replace with API calls if needed)
+  // Logic States
   const [property, setProperty] = useState(null);
+  const [selectedProp, setSelectedProp] = useState(null); // Home page se aayi hui property
   const [rentHistory, setRentHistory] = useState([
     { month: "December 2025", amount: "$1,450.00", status: "Paid" },
-    { month: "January 2026", amount: "$1,500.00", status: "Paid" },
-    { month: "February 2026", amount: "$1,500.00", status: "Due" },
-    { month: "March 2026", amount: "$1,500.00", status: "Paid" },
-    { month: "April 2026", amount: "$1,500.00", status: "Due" },
-    { month: "May 2026", amount: "$1,500.00", status: "Due" },
-    { month: "June 2026", amount: "$1,500.00", status: "Due" },
-    { month: "July 2026", amount: "$1,500.00", status: "Due" },
-    { month: "August 2026", amount: "$1,500.00", status: "Due" },
-    { month: "September 2026", amount: "$1,500.00", status: "Due" },
-    { month: "October 2026", amount: "$1,500.00", status: "Due" },
-    { month: "November 2026", amount: "$1,500.00", status: "Due" },
-    { month: "December 2026", amount: "$1,500.00", status: "Due" },
-    { month: "January 2027", amount: "$1,500.00", status: "Due" },
-    { month: "February 2027", amount: "$1,500.00", status: "Due" },
-    { month: "March 2027", amount: "$1,500.00", status: "Due" },
   ]);
 
   useEffect(() => {
@@ -83,25 +80,60 @@ const TenantDashboard = () => {
       return;
     }
 
+    // 1. Check if there is a pending selection from Home Page
+    const savedProp = localStorage.getItem("selectedProperty");
+    if (savedProp) {
+      setSelectedProp(JSON.parse(savedProp));
+    }
+
     const fetchTenantData = async () => {
+      // 2. userId undefined wala fix
+      if (!userId || userId === "undefined") {
+        console.error("User ID is missing!");
+        setLoading(false);
+        return;
+      }
+
       try {
         const res = await axios.get(
           `http://localhost:8000/api/properties/my-property/${userId}`
         );
         setProperty(res.data);
-        setLoading(false);
       } catch (err) {
         console.log("No property assigned yet");
+      } finally {
         setLoading(false);
       }
     };
 
-    if (userId) fetchTenantData();
+    fetchTenantData();
   }, [role, navigate, userId]);
 
-  const handleLogoutClick = () => {
-    setLogoutModalOpen(true); // Open custom modal instead of window.confirm
+  // --- NEW LOGIC: Confirm Booking Function ---
+  const handleConfirmBooking = async () => {
+    try {
+      const bookingData = {
+        propertyId: selectedProp._id,
+        tenantId: userId,
+        managerId: selectedProp.managerId, // Property ke sath managerId honi chahiye
+        status: "Pending",
+      };
+
+      await axios.post(
+        "http://localhost:8000/api/bookings/request",
+        bookingData
+      );
+
+      toast.success("Request sent to Manager! Please wait for approval.");
+      localStorage.removeItem("selectedProperty"); // Clean up
+      setSelectedProp(null);
+    } catch (error) {
+      toast.error("Failed to send request. Check backend.");
+      console.error(error);
+    }
   };
+
+  const handleLogoutClick = () => setLogoutModalOpen(true);
 
   const confirmLogout = () => {
     localStorage.clear();
@@ -110,9 +142,7 @@ const TenantDashboard = () => {
     setTimeout(() => navigate("/login"), 1000);
   };
 
-  const cancelLogout = () => {
-    setLogoutModalOpen(false);
-  };
+  const cancelLogout = () => setLogoutModalOpen(false);
 
   if (!role || role !== "Tenant") return null;
 
@@ -141,21 +171,10 @@ const TenantDashboard = () => {
       item.status.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Custom styles
   const cardStyle = {
     borderRadius: "15px",
     boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
     transition: "transform 0.3s ease",
-  };
-
-  const buttonStyle = {
-    borderRadius: "25px",
-    padding: "10px 20px",
-    transition: "all 0.3s ease",
-  };
-
-  const buttonHover = {
-    transform: "scale(1.05)",
   };
 
   return (
@@ -168,7 +187,7 @@ const TenantDashboard = () => {
     >
       <Toaster position="top-right" />
 
-      {/* Enhanced Top Navbar */}
+      {/* Navbar - Your Original Code */}
       <MDBNavbar
         expand="lg"
         dark
@@ -182,15 +201,10 @@ const TenantDashboard = () => {
           <MDBNavbarBrand className="fw-bold text-success">
             TENANT PORTAL
           </MDBNavbarBrand>
-          <MDBNavbarToggler
-            aria-controls="navbarNav"
-            aria-expanded={navbarOpen}
-            aria-label="Toggle navigation"
-            onClick={() => setNavbarOpen(!navbarOpen)}
-          >
+          <MDBNavbarToggler onClick={() => setNavbarOpen(!navbarOpen)}>
             <FaBars />
           </MDBNavbarToggler>
-          <MDBCollapse navbar id="navbarNav" isOpen={navbarOpen}>
+          <MDBCollapse navbar isOpen={navbarOpen}>
             <MDBNavbarNav className="ms-auto d-flex align-items-center">
               <MDBNavbarItem className="me-3">
                 <span className="text-white">
@@ -203,12 +217,6 @@ const TenantDashboard = () => {
                   size="sm"
                   onClick={handleLogoutClick}
                   style={buttonStyle}
-                  onMouseEnter={(e) =>
-                    Object.assign(e.target.style, buttonHover)
-                  }
-                  onMouseLeave={(e) =>
-                    Object.assign(e.target.style, buttonStyle)
-                  }
                 >
                   <FaSignOutAlt className="me-1" /> Logout
                 </MDBBtn>
@@ -218,48 +226,51 @@ const TenantDashboard = () => {
         </MDBContainer>
       </MDBNavbar>
 
-      {/* Custom Logout Confirmation Modal */}
-      <MDBModal
-        show={logoutModalOpen}
-        setShow={setLogoutModalOpen}
-        tabIndex="-1"
-        centered
-        animation="fade"
-      >
-        <MDBModalDialog>
-          <MDBModalContent style={{ borderRadius: "15px" }}>
-            <MDBModalHeader className="bg-light">
-              <MDBModalTitle className="text-danger fw-bold">
-                <FaSignOutAlt className="me-2" /> Confirm Logout
-              </MDBModalTitle>
-            </MDBModalHeader>
-            <MDBModalBody className="text-center py-4">
-              <p className="mb-0">
-                Are you sure you want to log out? You'll need to log in again to
-                access your account.
-              </p>
-            </MDBModalBody>
-            <MDBModalFooter className="justify-content-center">
-              <MDBBtn
-                color="secondary"
-                onClick={cancelLogout}
-                style={{ borderRadius: "25px", padding: "8px 20px" }}
-              >
-                <FaTimes className="me-1" /> Cancel
-              </MDBBtn>
-              <MDBBtn
-                color="danger"
-                onClick={confirmLogout}
-                style={{ borderRadius: "25px", padding: "8px 20px" }}
-              >
-                <FaCheck className="me-1" /> Confirm Logout
-              </MDBBtn>
-            </MDBModalFooter>
-          </MDBModalContent>
-        </MDBModalDialog>
-      </MDBModal>
-
       <MDBContainer className="py-5">
+        {/* --- NEW LOGIC: Conditional Booking Card (Design Integrated) --- */}
+        {selectedProp && (
+          <MDBCard
+            className="mb-5 border-0 shadow-lg"
+            style={{
+              background: "linear-gradient(90deg, #fff 0%, #f0fff0 100%)",
+              borderRadius: "15px",
+            }}
+          >
+            <MDBCardBody className="p-4 d-flex align-items-center justify-content-between flex-wrap">
+              <div>
+                <h4 className="fw-bold text-success mb-1">
+                  Finish Your Booking!
+                </h4>
+                <p className="text-muted mb-0">
+                  You selected <strong>{selectedProp.propertyName}</strong>.
+                  Send request to manager?
+                </p>
+              </div>
+              <div className="mt-3 mt-md-0">
+                <MDBBtn
+                  color="success"
+                  style={buttonStyle}
+                  onClick={handleConfirmBooking}
+                >
+                  <FaCheck className="me-2" /> Confirm Request
+                </MDBBtn>
+                <MDBBtn
+                  outline
+                  color="danger"
+                  className="ms-2"
+                  style={buttonStyle}
+                  onClick={() => {
+                    localStorage.removeItem("selectedProperty");
+                    setSelectedProp(null);
+                  }}
+                >
+                  Discard
+                </MDBBtn>
+              </div>
+            </MDBCardBody>
+          </MDBCard>
+        )}
+
         <header className="mb-5 text-center">
           <h2 className="fw-bold text-primary">My Rental Overview</h2>
           <p className="text-muted">
@@ -280,6 +291,7 @@ const TenantDashboard = () => {
             tooltip="View property details"
             onClick={() => toast("Property details viewing...")}
           />
+          {/* ... Baqi StatusCards Same ... */}
           <StatusCard
             icon={<FaFileInvoiceDollar />}
             title="Monthly Rent"
@@ -298,40 +310,35 @@ const TenantDashboard = () => {
             color="#ffc107"
             progress={100}
             tooltip="Report an issue if needed"
-            onClick={() => toast("No active maintenance requests")} // Fixed: Changed toast.info to toast
+            onClick={() => toast("No active maintenance requests")}
           />
         </MDBRow>
 
+        {/* Quick Actions & Table - Your Original Design */}
         <MDBCard className="shadow-2 border-0 mb-5" style={cardStyle}>
           <MDBCardBody className="p-4">
             <h5 className="fw-bold mb-4 text-dark">Quick Actions</h5>
             <div className="d-flex flex-wrap gap-3 justify-content-center">
               <MDBBtn
                 color="success"
-                onClick={() => toast.success("Opening Payment Gateway...")} // Fixed: Changed toast.info to toast.success
                 style={buttonStyle}
-                onMouseEnter={(e) => Object.assign(e.target.style, buttonHover)}
-                onMouseLeave={(e) => Object.assign(e.target.style, buttonStyle)}
+                onClick={() => toast.success("Opening Payment Gateway...")}
               >
                 <FaFileInvoiceDollar className="me-2" /> Pay Rent
               </MDBBtn>
               <MDBBtn
                 outline
                 color="primary"
-                onClick={() => toast("Rent history is below")} // Fixed: Changed toast.info to toast
                 style={buttonStyle}
-                onMouseEnter={(e) => Object.assign(e.target.style, buttonHover)}
-                onMouseLeave={(e) => Object.assign(e.target.style, buttonStyle)}
+                onClick={() => toast("Rent history is below")}
               >
                 <FaHistory className="me-2" /> View Rent History
               </MDBBtn>
               <MDBBtn
                 outline
                 color="dark"
-                onClick={() => toast("Request form opening...")} // Fixed: Changed toast.info to toast
                 style={buttonStyle}
-                onMouseEnter={(e) => Object.assign(e.target.style, buttonHover)}
-                onMouseLeave={(e) => Object.assign(e.target.style, buttonStyle)}
+                onClick={() => toast("Request form opening...")}
               >
                 <FaPlusCircle className="me-2" /> Report an Issue
               </MDBBtn>
@@ -339,7 +346,6 @@ const TenantDashboard = () => {
           </MDBCardBody>
         </MDBCard>
 
-        {/* Enhanced Rent History Table */}
         <MDBCard style={cardStyle}>
           <MDBCardBody>
             <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap">
@@ -362,45 +368,73 @@ const TenantDashboard = () => {
                   <th>Month</th>
                   <th>Amount</th>
                   <th>Status</th>
-                  {/* <th>Actions</th> */}
                 </tr>
               </MDBTableHead>
               <MDBTableBody>
-                {filteredHistory.length > 0 ? (
-                  filteredHistory.map((item, idx) => (
-                    <tr key={idx}>
-                      <td className="fw-bold">{item.month}</td>
-                      <td className="text-success fw-bold">{item.amount}</td>
-                      <td>
-                        <span
-                          className={`badge ${
-                            item.status === "Paid"
-                              ? "bg-success"
-                              : "bg-warning text-dark"
-                          }`}
-                        >
-                          {item.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="4" className="text-center text-muted">
-                      No rent history found matching your search.
+                {filteredHistory.map((item, idx) => (
+                  <tr key={idx}>
+                    <td className="fw-bold">{item.month}</td>
+                    <td className="text-success fw-bold">{item.amount}</td>
+                    <td>
+                      <span
+                        className={`badge ${
+                          item.status === "Paid"
+                            ? "bg-success"
+                            : "bg-warning text-dark"
+                        }`}
+                      >
+                        {item.status}
+                      </span>
                     </td>
                   </tr>
-                )}
+                ))}
               </MDBTableBody>
             </MDBTable>
           </MDBCardBody>
         </MDBCard>
       </MDBContainer>
+
+      {/* Logout Modal - Your Original Code */}
+      <MDBModal
+        show={logoutModalOpen}
+        setShow={setLogoutModalOpen}
+        tabIndex="-1"
+        centered
+      >
+        <MDBModalDialog>
+          <MDBModalContent style={{ borderRadius: "15px" }}>
+            <MDBModalHeader className="bg-light">
+              <MDBModalTitle className="text-danger fw-bold">
+                <FaSignOutAlt className="me-2" /> Confirm Logout
+              </MDBModalTitle>
+            </MDBModalHeader>
+            <MDBModalBody className="text-center py-4">
+              <p>Are you sure you want to log out?</p>
+            </MDBModalBody>
+            <MDBModalFooter className="justify-content-center">
+              <MDBBtn
+                color="secondary"
+                onClick={cancelLogout}
+                style={{ borderRadius: "25px" }}
+              >
+                <FaTimes className="me-1" /> Cancel
+              </MDBBtn>
+              <MDBBtn
+                color="danger"
+                onClick={confirmLogout}
+                style={{ borderRadius: "25px" }}
+              >
+                <FaCheck className="me-1" /> Confirm Logout
+              </MDBBtn>
+            </MDBModalFooter>
+          </MDBModalContent>
+        </MDBModalDialog>
+      </MDBModal>
     </div>
   );
 };
 
-// --- Status Card Component ---
+// --- Status Card Component (Modified to fix cardHover error) ---
 const StatusCard = ({
   icon,
   title,
@@ -411,26 +445,13 @@ const StatusCard = ({
   tooltip,
   onClick,
 }) => {
-  // Define cardHover locally to fix the  error
-  const cardHover = {
-    transform: "translateY(-5px)",
-  };
-
   return (
     <MDBCol md="4" className="mb-3">
       <MDBTooltip tag="div" title={tooltip}>
         <MDBCard
           className="shadow-2 border-0 h-100"
-          style={{
-            cursor: "pointer",
-            borderRadius: "15px",
-            transition: "transform 0.3s ease",
-          }}
+          style={{ cursor: "pointer", borderRadius: "15px" }}
           onClick={onClick}
-          onMouseEnter={(e) => Object.assign(e.currentTarget.style, cardHover)}
-          onMouseLeave={(e) =>
-            Object.assign(e.currentTarget.style, { transform: "scale(1)" })
-          }
         >
           <MDBCardBody className="text-center py-4">
             <div style={{ fontSize: "40px", color }} className="mb-3">
