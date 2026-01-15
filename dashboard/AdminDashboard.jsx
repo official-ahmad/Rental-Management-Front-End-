@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast, Toaster } from "react-hot-toast";
+import axios from "axios";
 import {
   FaUsers,
   FaBuilding,
@@ -12,6 +13,8 @@ import {
   FaEye,
   FaEdit,
   FaSearch,
+  FaUserTie,
+  FaUserFriends,
 } from "react-icons/fa";
 import {
   MDBContainer,
@@ -23,76 +26,99 @@ import {
   MDBTableHead,
   MDBTableBody,
   MDBBtn,
-  MDBInput,
   MDBProgress,
-  MDBTooltip,
 } from "mdb-react-ui-kit";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const role = localStorage.getItem("userRole");
+
+  // States
   const [searchQuery, setSearchQuery] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("overview");
 
-  const [users, setUsers] = useState([
-    {
-      id: "#001",
-      name: "Ahmad Raza",
-      email: "ahmad@example.com",
-      role: "Manager",
-    },
-    { id: "#002", name: "Zain Ali", email: "zain@example.com", role: "Tenant" },
-    {
-      id: "#003",
-      name: "Eman Shah",
-      email: "eman@example.com",
-      role: "Tenant",
-    },
-  ]);
+  // DB Data States
+  const [managers, setManagers] = useState([]);
+  const [tenants, setTenants] = useState([]);
+  const [properties, setProperties] = useState([]);
 
   useEffect(() => {
     if (!role || role !== "Admin") {
-      toast.error("Access denied. Please login as Admin");
+      toast.error("Access denied. Admin only!");
       navigate("/login", { replace: true });
     } else {
-      setTimeout(() => setLoading(false), 800);
+      fetchAllData();
     }
   }, [role, navigate]);
 
-  const handleLogout = () => {
-    if (role === "Admin") {
-      localStorage.clear();
-      toast.success("Logged out successfully");
-      setTimeout(() => navigate("/login"), 1000);
+  const fetchAllData = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+
+      // API Calls
+      const resUsers = await axios.get(
+        "http://localhost:8000/api/admin/users",
+        config
+      );
+      const resProps = await axios.get(
+        "http://localhost:8000/api/admin/properties",
+        config
+      );
+
+      // Data Extraction with Safety Checks
+      const allUsers = Array.isArray(resUsers.data)
+        ? resUsers.data
+        : resUsers.data.users || [];
+      const allProps = Array.isArray(resProps.data)
+        ? resProps.data
+        : resProps.data.properties || [];
+
+      setManagers(
+        allUsers.filter((u) => u.role === "Manager" || u.role === "manager")
+      );
+      setTenants(
+        allUsers.filter((u) => u.role === "Tenant" || u.role === "tenant")
+      );
+      setProperties(allProps);
+
+      setLoading(false);
+    } catch (err) {
+      console.error("Fetch Error:", err);
+      toast.error("Database se data nahi mila!");
+      setLoading(false);
     }
   };
 
-  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+  const handleLogout = () => {
+    localStorage.clear();
+    toast.success("Logged out!");
+    setTimeout(() => navigate("/login"), 500);
+  };
 
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.role.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const getDisplayData = () => {
+    let data = [];
+    if (activeTab === "managers") data = managers;
+    else if (activeTab === "tenants") data = tenants;
+    else if (activeTab === "properties") return properties;
+    else data = [...managers, ...tenants];
 
-  if (!role || role !== "Admin") return null;
+    return data.filter(
+      (item) =>
+        (item.name || item.title || "")
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        (item.email || "").toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  };
 
   if (loading)
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "100vh",
-          backgroundColor: "#f4f7f6",
-        }}
-      >
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
+      <div className="d-flex justify-content-center align-items-center vh-100">
+        <div className="spinner-border text-primary"></div>
       </div>
     );
 
@@ -101,7 +127,7 @@ const AdminDashboard = () => {
       style={{
         display: "flex",
         minHeight: "100vh",
-        fontFamily: "Roboto, sans-serif",
+        backgroundColor: "#f3f4f6",
       }}
     >
       <Toaster position="top-right" />
@@ -109,49 +135,50 @@ const AdminDashboard = () => {
       {/* Sidebar */}
       <div
         style={{
-          width: sidebarOpen ? "280px" : "60px",
-          background: "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)",
+          width: sidebarOpen ? "280px" : "80px",
+          background: "#1e293b",
           color: "white",
-          padding: sidebarOpen ? "25px" : "25px 10px",
-          transition: "width 0.3s, padding 0.3s",
-          boxShadow: "2px 0 10px rgba(0,0,0,0.1)",
-          overflow: "hidden",
+          padding: "20px 15px",
+          transition: "0.3s ease",
         }}
       >
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          {sidebarOpen && <h4 style={{ color: "#3498db" }}>ADMIN PANEL</h4>}
+        <div className="d-flex justify-content-between align-items-center mb-5 mt-2">
+          {sidebarOpen && <h4 className="fw-bold text-info m-0">ADMIN</h4>}
           <FaBars
-            onClick={toggleSidebar}
-            style={{ cursor: "pointer", fontSize: "20px" }}
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            style={{ cursor: "pointer" }}
           />
         </div>
-        <div className="d-flex flex-column gap-3">
+
+        <div className="d-flex flex-column gap-2">
           <SidebarItem
+            active={activeTab === "overview"}
+            onClick={() => setActiveTab("overview")}
             icon={<FaChartLine />}
-            label={sidebarOpen ? "Dashboard" : ""}
+            label={sidebarOpen ? "Overview" : ""}
           />
           <SidebarItem
-            icon={<FaUsers />}
-            label={sidebarOpen ? "All Users" : ""}
+            active={activeTab === "managers"}
+            onClick={() => setActiveTab("managers")}
+            icon={<FaUserTie />}
+            label={sidebarOpen ? "Managers" : ""}
           />
           <SidebarItem
+            active={activeTab === "tenants"}
+            onClick={() => setActiveTab("tenants")}
+            icon={<FaUserFriends />}
+            label={sidebarOpen ? "Tenants" : ""}
+          />
+          <SidebarItem
+            active={activeTab === "properties"}
+            onClick={() => setActiveTab("properties")}
             icon={<FaBuilding />}
             label={sidebarOpen ? "Properties" : ""}
           />
-          <SidebarItem
-            icon={<FaMoneyBillWave />}
-            label={sidebarOpen ? "Finances" : ""}
-          />
-          <hr style={{ borderColor: "rgba(255,255,255,0.3)" }} />
+          <hr style={{ opacity: 0.2 }} />
           <div
             onClick={handleLogout}
-            style={{ cursor: "pointer", padding: "12px", color: "#e74c3c" }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.backgroundColor = "transparent")
-            }
+            className="text-danger p-3 cursor-pointer d-flex align-items-center"
           >
             <FaSignOutAlt className="me-3" /> {sidebarOpen && "Logout"}
           </div>
@@ -159,120 +186,135 @@ const AdminDashboard = () => {
       </div>
 
       {/* Main Content */}
-      <div style={{ flex: 1, backgroundColor: "#f8f9fa", padding: "20px" }}>
+      <div style={{ flex: 1, padding: "30px", overflowY: "auto" }}>
         <MDBContainer fluid>
-          {/* Header */}
-          <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap">
-            <div>
-              <h2 className="fw-bold text-primary">Admin Overview</h2>
-              <small className="text-muted">
-                Manage users, properties, and finances efficiently.
-              </small>
-            </div>
-            <div className="d-flex gap-2 flex-wrap">
-              <MDBBtn color="primary" size="sm">
-                Download Report
-              </MDBBtn>
-              <MDBBtn color="success" size="sm">
-                <FaPlus className="me-1" /> Add User
-              </MDBBtn>
-              <MDBBtn color="warning" size="sm">
-                <FaPlus className="me-1" /> Add Property
-              </MDBBtn>
-            </div>
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <h2 className="fw-bold">
+              System Control:{" "}
+              <span className="text-primary">{activeTab.toUpperCase()}</span>
+            </h2>
+            <MDBBtn color="dark" onClick={fetchAllData}>
+              Refresh DB
+            </MDBBtn>
           </div>
 
-          {/* Stats Cards */}
+          {/* Stats */}
           <MDBRow className="mb-4">
             <StatsCard
-              title="Total Users"
-              value={users.length}
-              icon={<FaUsers />}
-              color="#1266f1"
+              title="Staff"
+              value={managers.length}
+              icon={<FaUserTie />}
+              color="#3b82f6"
               progress={100}
-              tooltip="All active users"
             />
             <StatsCard
-              title="Listed Properties"
-              value={32}
+              title="Tenants"
+              value={tenants.length}
+              icon={<FaUsers />}
+              color="#10b981"
+              progress={85}
+            />
+            <StatsCard
+              title="Properties"
+              value={properties.length}
               icon={<FaBuilding />}
-              color="#00b74a"
-              progress={80}
-              tooltip="Properties available"
-            />
-            <StatsCard
-              title="Total Rent Collected"
-              value="$12,450"
-              icon={<FaMoneyBillWave />}
-              color="#ffa900"
-              progress={65}
-              tooltip="Revenue from leased properties"
+              color="#f59e0b"
+              progress={60}
             />
           </MDBRow>
 
-          {/* Users Table */}
-          <MDBCard>
+          {/* Data Table */}
+          <MDBCard className="border-0 shadow-sm">
             <MDBCardBody>
-              <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap">
-                <h5 className="fw-bold m-0 text-dark">Recent Users</h5>
-                <div className="d-flex align-items-center">
-                  <FaSearch className="me-2 text-muted" />
-                  <MDBInput
-                    type="search"
-                    placeholder="Search Users..."
-                    size="sm"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    style={{ width: "200px" }}
-                  />
-                </div>
+              <div className="d-flex justify-content-between mb-4">
+                <h5 className="fw-bold">Database Records</h5>
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  className="form-control w-25 shadow-none"
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
               </div>
-              <MDBTable hover striped responsive>
+
+              <MDBTable hover borderless align="middle">
                 <MDBTableHead className="bg-light">
-                  <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Actions</th>
-                  </tr>
+                  {activeTab === "properties" ? (
+                    <tr>
+                      <th>Image</th>
+                      <th>Title</th>
+                      <th>Price</th>
+                      <th>Location</th>
+                      <th>Action</th>
+                    </tr>
+                  ) : (
+                    <tr>
+                      <th>ID</th>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Role</th>
+                      <th>Actions</th>
+                    </tr>
+                  )}
                 </MDBTableHead>
                 <MDBTableBody>
-                  {filteredUsers.length ? (
-                    filteredUsers.map((user) => (
-                      <tr key={user.id}>
-                        <td>{user.id}</td>
-                        <td>{user.name}</td>
-                        <td>{user.email}</td>
+                  {getDisplayData().length > 0 ? (
+                    getDisplayData().map((item) => (
+                      <tr key={item._id}>
+                        {activeTab === "properties" ? (
+                          <>
+                            <td>
+                              <img
+                                src={
+                                  item.image || "https://via.placeholder.com/50"
+                                }
+                                style={{
+                                  width: "45px",
+                                  height: "45px",
+                                  borderRadius: "8px",
+                                }}
+                                alt=""
+                              />
+                            </td>
+                            <td className="fw-bold">{item.title}</td>
+                            <td className="text-success fw-bold">
+                              Rs. {item.price}
+                            </td>
+                            <td>{item.location}</td>
+                          </>
+                        ) : (
+                          <>
+                            <td className="small text-muted">
+                              #{item._id?.substring(0, 7)}
+                            </td>
+                            <td className="fw-bold">{item.name}</td>
+                            <td>{item.email}</td>
+                            <td>
+                              <span
+                                className={`badge ${
+                                  item.role === "Manager"
+                                    ? "bg-primary"
+                                    : "bg-warning text-dark"
+                                }`}
+                              >
+                                {item.role}
+                              </span>
+                            </td>
+                          </>
+                        )}
                         <td>
-                          <span
-                            className={`badge ${
-                              user.role === "Tenant"
-                                ? "bg-warning text-dark"
-                                : "bg-info text-dark"
-                            }`}
-                          >
-                            {user.role}
-                          </span>
-                        </td>
-                        <td>
-                          <MDBTooltip tag="span" title="View">
-                            <MDBBtn color="link" size="sm">
-                              <FaEye />
-                            </MDBBtn>
-                          </MDBTooltip>
-                          <MDBTooltip tag="span" title="Edit">
-                            <MDBBtn color="link" size="sm">
-                              <FaEdit />
-                            </MDBBtn>
-                          </MDBTooltip>
+                          <MDBBtn color="link" className="text-info p-0 me-2">
+                            <FaEdit />
+                          </MDBBtn>
+                          <MDBBtn color="link" className="text-danger p-0">
+                            <FaEye />
+                          </MDBBtn>
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="5" className="text-center text-muted">
-                        No users found
+                      <td colSpan="5" className="text-center p-5">
+                        No Data Found in Database
                       </td>
                     </tr>
                   )}
@@ -286,51 +328,48 @@ const AdminDashboard = () => {
   );
 };
 
-// Sidebar item component
-const SidebarItem = ({ icon, label }) => (
+// Sidebar Item Component
+const SidebarItem = ({ icon, label, active, onClick }) => (
   <div
-    className="d-flex align-items-center p-2 rounded"
-    style={{ cursor: "pointer", transition: "all 0.3s ease", gap: "10px" }}
-    onMouseEnter={(e) =>
-      (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)")
-    }
-    onMouseLeave={(e) =>
-      (e.currentTarget.style.backgroundColor = "transparent")
-    }
+    onClick={onClick}
+    style={{
+      cursor: "pointer",
+      padding: "12px 15px",
+      borderRadius: "10px",
+      backgroundColor: active ? "rgba(59, 130, 246, 0.2)" : "transparent",
+      color: active ? "#60a5fa" : "#94a3b8",
+      display: "flex",
+      alignItems: "center",
+      gap: "15px",
+      transition: "0.2s",
+    }}
   >
-    {icon} {label}
+    {icon} <span>{label}</span>
   </div>
 );
 
-// Stats card component
-const StatsCard = ({ title, value, icon, color, progress, tooltip }) => (
-  <MDBCol md="4" className="mb-3">
-    <MDBTooltip tag="div" title={tooltip}>
-      <MDBCard
-        className="shadow-2 border-0"
-        style={{
-          borderLeft: `5px solid ${color}`,
-          borderRadius: "15px",
-          transition: "transform 0.3s ease",
-        }}
-        onMouseEnter={(e) =>
-          (e.currentTarget.style.transform = "translateY(-5px)")
-        }
-        onMouseLeave={(e) =>
-          (e.currentTarget.style.transform = "translateY(0)")
-        }
-      >
-        <MDBCardBody className="d-flex justify-content-between align-items-center">
-          <div>
-            <p className="text-muted mb-1">{title}</p>
-            <h3 className="fw-bold">{value}</h3>
-            <MDBProgress value={progress} className="mt-2" />
-            <small className="text-muted">{progress}% Progress</small>
-          </div>
-          <div style={{ color, fontSize: "35px" }}>{icon}</div>
-        </MDBCardBody>
-      </MDBCard>
-    </MDBTooltip>
+// Stats Card Component
+const StatsCard = ({ title, value, icon, color, progress }) => (
+  <MDBCol md="4">
+    <MDBCard className="border-0 shadow-sm rounded-4">
+      <MDBCardBody className="d-flex justify-content-between align-items-center">
+        <div>
+          <p className="text-muted small mb-1 fw-bold">{title}</p>
+          <h2 className="fw-black mb-1">{value}</h2>
+          <MDBProgress value={progress} height="4" />
+        </div>
+        <div
+          className="p-3 rounded-3"
+          style={{
+            backgroundColor: `${color}15`,
+            color: color,
+            fontSize: "1.8rem",
+          }}
+        >
+          {icon}
+        </div>
+      </MDBCardBody>
+    </MDBCard>
   </MDBCol>
 );
 

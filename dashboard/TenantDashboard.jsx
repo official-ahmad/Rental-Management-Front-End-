@@ -134,7 +134,7 @@ const TenantDashboard = () => {
   const latestBooking = bookings.length > 0 ? bookings[0] : null;
   const confirmLogout = () => {
     localStorage.clear();
-    navigate("/login");
+    navigate("/page");
   };
 
   if (loading) {

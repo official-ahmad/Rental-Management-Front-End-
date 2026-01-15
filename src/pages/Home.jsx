@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import styled from "styled-components";
-import Swal from "sweetalert2"; // <--- Naya Import
+import Swal from "sweetalert2";
 import {
   MDBContainer,
   MDBRow,
@@ -13,7 +13,7 @@ import {
   MDBIcon,
 } from "mdb-react-ui-kit";
 
-// --- STYLED COMPONENTS (UNTOUCHED - DESIGN SAME RAKHA HAI) ---
+// --- STYLED COMPONENTS ---
 const HeroSection = styled.div`
   position: relative;
   width: 100%;
@@ -218,9 +218,23 @@ const CardWrapper = styled.div`
   }
   .location {
     color: #666;
-    font-size: 1rem;
-    margin-bottom: 20px;
+    font-size: 0.95rem;
+    margin-bottom: 12px;
   }
+
+  /* --- DESCRIPTION TEXT STYLING --- */
+  .description-text {
+    font-size: 0.9rem;
+    color: #777;
+    margin-bottom: 20px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Truncate after 2 lines */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    height: 2.7rem; /* Keeps all cards same height */
+    line-height: 1.4;
+  }
+
   .features {
     display: flex;
     justify-content: space-between;
@@ -232,12 +246,31 @@ const CardWrapper = styled.div`
   .features span {
     display: flex;
     align-items: center;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: #555;
   }
   .features .icon {
     margin-right: 5px;
     color: #667eea;
+  }
+
+  .is-rented {
+    opacity: 0.7;
+    filter: grayscale(0.5);
+    pointer-events: none;
+  }
+  .rented-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #ff4d4d;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 50px;
+    font-weight: bold;
+    z-index: 3;
+    font-size: 0.8rem;
+    text-transform: uppercase;
   }
 `;
 
@@ -263,17 +296,14 @@ const ButtonWrapper = styled.div`
     text-transform: uppercase;
     letter-spacing: 1px;
   }
-  .animated-button:hover {
+  .animated-button:hover:not(:disabled) {
     color: #fff;
     box-shadow: 0 0 0 10px rgba(102, 126, 234, 0.4);
   }
   .animated-button .text {
     position: relative;
-    z-index: 1;
+    z-index: 10;
     transition: all 0.4s ease;
-  }
-  .animated-button:hover .text {
-    transform: translateX(5px);
   }
   .animated-button .circle {
     position: absolute;
@@ -285,8 +315,9 @@ const ButtonWrapper = styled.div`
     background-color: #667eea;
     border-radius: 50%;
     transition: all 0.4s ease;
+    z-index: 1;
   }
-  .animated-button:hover .circle {
+  .animated-button:hover:not(:disabled) .circle {
     width: 300px;
     height: 300px;
   }
@@ -303,11 +334,18 @@ const ButtonWrapper = styled.div`
   .animated-button .arr-2 {
     left: -25%;
   }
-  .animated-button:hover .arr-1 {
+  .animated-button:hover:not(:disabled) .arr-1 {
     right: -25%;
   }
-  .animated-button:hover .arr-2 {
+  .animated-button:hover:not(:disabled) .arr-2 {
     left: 20px;
+  }
+
+  .animated-button:disabled {
+    background-color: #e0e0e0;
+    border-color: #ccc;
+    color: #888;
+    cursor: not-allowed;
   }
 `;
 
@@ -334,8 +372,9 @@ const Home = () => {
     fetchProperties();
   }, []);
 
-  // --- UPDATED RENT NOW LOGIC WITH SWEETALERT2 ---
   const handleRentNow = async (prop) => {
+    if (prop.status === "Occupied") return;
+
     if (!userId) {
       Swal.fire({
         title: "Login Required",
@@ -348,21 +387,20 @@ const Home = () => {
       return;
     }
 
-    // Professional Confirmation Modal
     Swal.fire({
-      title: "Confirm Booking?",
-      text: `Do you want to send a rental request for ${prop.propertyName}?`,
+      title: "Confirm Request?",
+      text: `Send a rental request for ${prop.propertyName}?`,
       icon: "question",
       showCancelButton: true,
       confirmButtonColor: "#667eea",
       cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, Rent it!",
+      confirmButtonText: "Yes, Send Request",
       borderRadius: "20px",
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
           const response = await axios.post(
-            "http://localhost:8000/api/bookings/request",
+            "http://localhost:8000/api/bookings/create",
             {
               propertyId: prop._id,
               tenantId: userId,
@@ -370,10 +408,9 @@ const Home = () => {
           );
 
           if (response.status === 201) {
-            // Professional Success Alert
             Swal.fire({
               title: "Request Sent!",
-              text: "Your booking request has been submitted successfully.",
+              text: "Request submitted successfully. Redirecting...",
               icon: "success",
               timer: 2000,
               showConfirmButton: false,
@@ -381,17 +418,13 @@ const Home = () => {
             });
 
             setTimeout(() => {
-              const dashboardPath = userRole
-                ? `/${userRole.toLowerCase()}-dashboard`
-                : "/tenant-dashboard";
-              navigate(dashboardPath);
+              navigate("/tenant-dashboard");
             }, 2000);
           }
         } catch (error) {
-          console.error("Booking Error:", error.response?.data);
           Swal.fire({
             title: "Error!",
-            text: error.response?.data?.message || "Booking failed. Try again.",
+            text: error.response?.data?.message || "Something went wrong.",
             icon: "error",
             confirmButtonColor: "#667eea",
           });
@@ -464,9 +497,7 @@ const Home = () => {
       <MDBContainer>
         {loading ? (
           <div className="text-center py-5">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
+            <div className="spinner-border text-primary" role="status"></div>
             <h4 className="mt-3">Loading amazing properties...</h4>
           </div>
         ) : (
@@ -474,8 +505,17 @@ const Home = () => {
             {filteredProperties.map((prop) => (
               <MDBCol lg="4" md="6" key={prop._id} className="mb-5">
                 <CardWrapper>
-                  <MDBCard className="property-card shadow-sm">
+                  <MDBCard
+                    className={`property-card shadow-sm ${
+                      prop.status === "Occupied" ? "is-rented" : ""
+                    }`}
+                  >
                     <div className="img-container position-relative">
+                      {prop.status === "Occupied" && (
+                        <div className="rented-badge">
+                          <MDBIcon fas icon="lock" className="me-1" /> Rented
+                        </div>
+                      )}
                       <MDBCardImage
                         src={prop.image}
                         position="top"
@@ -496,6 +536,13 @@ const Home = () => {
                         />
                         {prop.location}
                       </p>
+
+                      {/* --- DESCRIPTION FIELD ADDED HERE --- */}
+                      <p className="description-text">
+                        {prop.description ||
+                          "No description provided for this property. Contact manager for more details."}
+                      </p>
+
                       <div className="features">
                         <span>
                           <MDBIcon fas icon="bed" className="icon" />{" "}
@@ -507,7 +554,7 @@ const Home = () => {
                         </span>
                         <span>
                           <MDBIcon fas icon="ruler-combined" className="icon" />{" "}
-                          {prop.area}
+                          {prop.area} sqft
                         </span>
                       </div>
                       <div className="mt-auto">
@@ -515,23 +562,32 @@ const Home = () => {
                           <button
                             className="animated-button"
                             onClick={() => handleRentNow(prop)}
+                            disabled={prop.status === "Occupied"}
                           >
-                            <span className="text">Rent Now</span>
-                            <span className="circle" />
-                            <svg
-                              viewBox="0 0 24 24"
-                              className="arr-1"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z" />
-                            </svg>
-                            <svg
-                              viewBox="0 0 24 24"
-                              className="arr-2"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z" />
-                            </svg>
+                            <span className="text">
+                              {prop.status === "Occupied"
+                                ? "Not Available"
+                                : "Rent Now"}
+                            </span>
+                            {prop.status !== "Occupied" && (
+                              <>
+                                <span className="circle" />
+                                <svg
+                                  viewBox="0 0 24 24"
+                                  className="arr-1"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z" />
+                                </svg>
+                                <svg
+                                  viewBox="0 0 24 24"
+                                  className="arr-2"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z" />
+                                </svg>
+                              </>
+                            )}
                           </button>
                         </ButtonWrapper>
                       </div>
