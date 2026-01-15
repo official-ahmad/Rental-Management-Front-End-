@@ -253,6 +253,7 @@ const ManagerDashboard = () => {
                       </td>
                     </tr>
                   ))}
+                  
                 </MDBTableBody>
               </MDBTable>
             </MDBCardBody>

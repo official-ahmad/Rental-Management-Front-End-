@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import axios from "axios";
 import { toast, Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-// Icons Import karein
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import {
   MDBBtn,
@@ -18,35 +17,9 @@ import styled from "styled-components";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  // Password visibility state
   const [showPassword, setShowPassword] = useState(false);
-  // Added role state for the dropdown
   const [role, setRole] = useState("Tenant");
   const navigate = useNavigate();
-
-  // const handleLogin = async (e) => {
-  //   e.preventDefault();
-  //   try {
-  //     const res = await axios.post("http://localhost:8000/api/auth/login", {
-  //       email,
-  //       password,
-  //     });
-  //     localStorage.setItem("token", res.data.token);
-  //     localStorage.setItem("userRole", res.data.user.role);
-  //     localStorage.setItem("userId", res.data.user.id);
-  //     localStorage.setItem("userName", res.data.user.name);
-  //     toast.success("Access Granted!");
-
-  //     setTimeout(() => {
-  //       if (res.data.user.role === "Admin") navigate("/admin-dashboard");
-  //       else if (res.data.user.role === "Manager")
-  //         navigate("/manager-dashboard");
-  //       else navigate("/tenant-dashboard");
-  //     }, 1000);
-  //   } catch (err) {
-  //     toast.error(err.response?.data?.message || "Access Denied!");
-  //   }
-  // };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -55,29 +28,31 @@ const Login = () => {
         email,
         password,
       });
-      // Check if selected role matches the user's actual role
+
       if (role !== res.data.user.role) {
         toast.error(
-          `Access Denied! Please login as: "${res.data.user.role}".`
+          `Access Denied! Use correct role: "${res.data.user.role}".`
         );
-        return; 
+        return;
       }
+
+      // --- LOGIC FIX: MongoDB uses _id ---
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("userRole", res.data.user.role);
-      localStorage.setItem("userId", res.data.user.id);
+      localStorage.setItem("userId", res.data.user._id); // Yahan _id aayega
       localStorage.setItem("userName", res.data.user.name);
-      toast.success("Access Granted!");
+
+      toast.success(`Welcome ${res.data.user.name}!`);
 
       setTimeout(() => {
-        if (res.data.user.role === "Admin") navigate("/admin-dashboard");
-        else if (res.data.user.role === "Manager")
-          navigate("/manager-dashboard");
-        else navigate("/tenant-dashboard");
+        const targetDashboard = `/${res.data.user.role.toLowerCase()}-dashboard`;
+        navigate(targetDashboard);
       }, 1000);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Access Denied!");
+      toast.error(err.response?.data?.message || "Login Failed!");
     }
   };
+
   return (
     <div
       style={{
@@ -137,14 +112,7 @@ const Login = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    style={{
-                      borderRadius: "10px",
-                      border: "1px solid #ddd",
-                      padding: "12px 15px",
-                    }}
                   />
-
-                  {/* Password Input with Icons */}
                   <div style={{ position: "relative", marginBottom: "1.5rem" }}>
                     <MDBInput
                       wrapperClass="mb-0"
@@ -153,13 +121,7 @@ const Login = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                      style={{
-                        borderRadius: "10px",
-                        border: "1px solid #ddd",
-                        padding: "12px 45px 12px 15px",
-                      }}
                     />
-                    {/* Icon Toggle Button */}
                     <span
                       onClick={() => setShowPassword(!showPassword)}
                       style={{
@@ -169,10 +131,7 @@ const Login = () => {
                         transform: "translateY(-50%)",
                         cursor: "pointer",
                         color: "#666",
-                        transition: "color 0.3s",
                       }}
-                      onMouseEnter={(e) => (e.target.style.color = "#333")}
-                      onMouseLeave={(e) => (e.target.style.color = "#666")}
                     >
                       {showPassword ? (
                         <FaEyeSlash size={20} />
@@ -181,24 +140,16 @@ const Login = () => {
                       )}
                     </span>
                   </div>
-
-                  {/* Added Role Dropdown (same as Signup) */}
                   <select
                     className="form-select mb-4"
                     value={role}
                     onChange={(e) => setRole(e.target.value)}
-                    aria-label="Select role"
-                    style={{
-                      borderRadius: "10px",
-                      border: "1px solid #ddd",
-                      padding: "12px 15px",
-                    }}
+                    style={{ borderRadius: "10px", padding: "12px 15px" }}
                   >
                     <option value="Tenant">Tenant</option>
                     <option value="Manager">Manager</option>
                     <option value="Admin">Admin</option>
                   </select>
-
                   <Button />
                 </form>
                 <div className="text-center">
@@ -226,31 +177,21 @@ const Login = () => {
   );
 };
 
-const Button = () => {
-  return (
-    <StyledWrapper>
-      <div className="container">
-        <button type="submit" className="button type--C">
-          <div className="button__line" />
-          <div className="button__line" />
-          <span className="button__text">Sign In</span>
-          <div className="button__drow1" />
-          <div className="button__drow2" />
-        </button>
-      </div>
-    </StyledWrapper>
-  );
-};
+const Button = () => (
+  <StyledWrapper>
+    <div className="container">
+      <button type="submit" className="button type--C">
+        <div className="button__line" />
+        <div className="button__line" />
+        <span className="button__text">Sign In</span>
+        <div className="button__drow1" />
+        <div className="button__drow2" />
+      </button>
+    </div>
+  </StyledWrapper>
+);
 
 const StyledWrapper = styled.div`
-  .type--A {
-    --line_color: #555555;
-    --back_color: #ffecf6;
-  }
-  .type--B {
-    --line_color: #1b1919;
-    --back_color: #e9ecff;
-  }
   .type--C {
     --line_color: #00135c;
     --back_color: #defffa;
@@ -258,9 +199,8 @@ const StyledWrapper = styled.div`
   .button {
     position: relative;
     z-index: 0;
-    width: 100%; /* Changed from 240px to 100% for full width */
+    width: 100%;
     height: 56px;
-    text-decoration: none;
     font-size: 14px;
     font-weight: bold;
     color: var(--line_color);
@@ -269,7 +209,6 @@ const StyledWrapper = styled.div`
     border: none;
     background: transparent;
     cursor: pointer;
-    justify-content: center; /* Ensures content is centered inside */
   }
   .button__text {
     display: flex;
@@ -351,6 +290,7 @@ const StyledWrapper = styled.div`
     z-index: -1;
     border-radius: 16px;
     transform-origin: 16px 16px;
+    background: var(--back_color);
   }
   .button__drow1 {
     top: -16px;
@@ -366,80 +306,11 @@ const StyledWrapper = styled.div`
     height: 0;
     transform: rotate(-127deg);
   }
-  .button__drow1::before,
-  .button__drow1::after,
-  .button__drow2::before,
-  .button__drow2::after {
-    content: "";
-    position: absolute;
-  }
-  .button__drow1::before {
-    bottom: 0;
-    left: 0;
-    width: 0;
-    height: 32px;
-    border-radius: 16px;
-    transform-origin: 16px 16px;
-    transform: rotate(-60deg);
-  }
-  .button__drow1::after {
-    top: -10px;
-    left: 45px;
-    width: 0;
-    height: 32px;
-    border-radius: 16px;
-    transform-origin: 16px 16px;
-    transform: rotate(69deg);
-  }
-  .button__drow2::before {
-    bottom: 0;
-    left: 0;
-    width: 0;
-    height: 32px;
-    border-radius: 16px;
-    transform-origin: 16px 16px;
-    transform: rotate(-146deg);
-  }
-  .button__drow2::after {
-    bottom: 26px;
-    left: -40px;
-    width: 0;
-    height: 32px;
-    border-radius: 16px;
-    transform-origin: 16px 16px;
-    transform: rotate(-262deg);
-  }
-  .button__drow1,
-  .button__drow1::before,
-  .button__drow1::after,
-  .button__drow2,
-  .button__drow2::before,
-  .button__drow2::after {
-    background: var(--back_color);
-  }
   .button:hover .button__drow1 {
-    animation: drow1 ease-in 0.06s;
-    animation-fill-mode: forwards;
-  }
-  .button:hover .button__drow1::before {
-    animation: drow2 linear 0.08s 0.06s;
-    animation-fill-mode: forwards;
-  }
-  .button:hover .button__drow1::after {
-    animation: drow3 linear 0.03s 0.14s;
-    animation-fill-mode: forwards;
+    animation: drow1 ease-in 0.06s forwards;
   }
   .button:hover .button__drow2 {
-    animation: drow4 linear 0.06s 0.2s;
-    animation-fill-mode: forwards;
-  }
-  .button:hover .button__drow2::before {
-    animation: drow3 linear 0.03s 0.26s;
-    animation-fill-mode: forwards;
-  }
-  .button:hover .button__drow2::after {
-    animation: drow5 linear 0.06s 0.32s;
-    animation-fill-mode: forwards;
+    animation: drow4 linear 0.06s 0.2s forwards;
   }
   @keyframes drow1 {
     0% {
@@ -447,29 +318,6 @@ const StyledWrapper = styled.div`
     }
     100% {
       height: 100px;
-    }
-  }
-  @keyframes drow2 {
-    0% {
-      width: 0;
-      opacity: 0;
-    }
-    10% {
-      opacity: 0;
-    }
-    11% {
-      opacity: 1;
-    }
-    100% {
-      width: 120px;
-    }
-  }
-  @keyframes drow3 {
-    0% {
-      width: 0;
-    }
-    100% {
-      width: 80px;
     }
   }
   @keyframes drow4 {
@@ -480,26 +328,13 @@ const StyledWrapper = styled.div`
       height: 120px;
     }
   }
-  @keyframes drow5 {
-    0% {
-      width: 0;
-    }
-    100% {
-      width: 124px;
-    }
-  }
-
   .container {
     width: 100%;
-    height: auto;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     margin-bottom: 1.5rem;
-  }
-  .button:not(:last-child) {
-    margin-bottom: 64px;
   }
 `;
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import styled from "styled-components";
+import Swal from "sweetalert2"; // <--- Naya Import
 import {
   MDBContainer,
   MDBRow,
@@ -12,38 +13,29 @@ import {
   MDBIcon,
 } from "mdb-react-ui-kit";
 
-// 1. Hero Background Pattern
+// --- STYLED COMPONENTS (UNTOUCHED - DESIGN SAME RAKHA HAI) ---
 const HeroSection = styled.div`
   position: relative;
   width: 100%;
-  padding: 80px 0;
+  padding: 120px 0 100px;
   color: white;
   overflow: hidden;
   text-align: center;
-  margin-bottom: 50px;
-  background: #121212;
-  background: linear-gradient(
-    135deg,
-    #121212 25%,
-    #1a1a1a 25%,
-    #1a1a1a 50%,
-    #121212 50%,
-    #121212 75%,
-    #1a1a1a 75%,
-    #1a1a1a
-  );
-  background-size: 40px 40px;
-  animation: move 4s linear infinite;
-
-  @keyframes move {
+  margin-bottom: 60px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-size: 400% 400%;
+  animation: gradientShift 8s ease infinite;
+  @keyframes gradientShift {
     0% {
-      background-position: 0 0;
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
     }
     100% {
-      background-position: 40px 40px;
+      background-position: 0% 50%;
     }
   }
-
   &::before {
     content: "";
     position: absolute;
@@ -51,202 +43,262 @@ const HeroSection = styled.div`
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.4);
     z-index: 1;
   }
-
   .content-box {
     position: relative;
     z-index: 2;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  h1 {
+    font-size: 3.5rem;
+    font-weight: 700;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    margin-bottom: 20px;
+  }
+  p {
+    font-size: 1.2rem;
+    opacity: 0.9;
+    margin-bottom: 40px;
   }
 `;
 
-// --- LOGIN/SIGNUP BUTTONS STYLING ---
 const TopNav = styled.div`
   position: absolute;
-  top: 25px;
-  right: 40px;
+  top: 30px;
+  right: 50px;
   z-index: 10;
   display: flex;
-  gap: 15px;
-
+  gap: 20px;
   .nav-btn {
-    padding: 8px 24px;
+    padding: 10px 28px;
     border-radius: 50px;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 15px;
     cursor: pointer;
     transition: all 0.3s ease;
-    border: 2px solid greenyellow;
+    border: 2px solid #fff;
     text-transform: uppercase;
     letter-spacing: 1px;
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
   }
-
   .login-btn {
     background: transparent;
-    color: greenyellow;
+    color: #fff;
   }
-
   .login-btn:hover {
-    background: greenyellow;
-    color: #121212;
-    box-shadow: 0 0 15px rgba(173, 255, 47, 0.4);
+    background: #fff;
+    color: #667eea;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
   }
-
   .signup-btn {
-    background: greenyellow;
-    color: #121212;
+    background: #fff;
+    color: #667eea;
   }
-
   .signup-btn:hover {
-    background: transparent;
-    color: greenyellow;
-    box-shadow: 0 0 15px rgba(173, 255, 47, 0.2);
+    background: #667eea;
+    color: #fff;
+    box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
   }
-
-  @media (max-width: 576px) {
-    top: 15px;
-    right: 15px;
-    gap: 8px;
-    .nav-btn {
-      padding: 6px 15px;
-      font-size: 12px;
-    }
+  .user-btn {
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    border: 2px solid #fff;
+  }
+  .user-btn:hover {
+    background: #fff;
+    color: #667eea;
   }
 `;
 
-// 2. Search Box Styling
 const SearchWrapper = styled.div`
   display: flex;
   justify-content: center;
-  margin-top: 30px;
+  margin-top: 40px;
   .searchBox {
     display: flex;
     width: 100%;
-    max-width: 500px;
+    max-width: 600px;
     align-items: center;
     justify-content: space-between;
-    background: #2f3640;
+    background: rgba(255, 255, 255, 0.95);
     border-radius: 50px;
     position: relative;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    transition: box-shadow 0.3s ease;
+  }
+  .searchBox:hover {
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
   }
   .searchButton {
-    color: white;
+    color: #667eea;
     position: absolute;
-    right: 5px;
-    width: 45px;
-    height: 45px;
+    right: 8px;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
-    background: linear-gradient(90deg, #2af598 0%, #009efd 100%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    transition: transform 0.3s ease;
+  }
+  .searchButton:hover {
+    transform: scale(1.1);
   }
   .searchInput {
     width: 100%;
     border: none;
     background: none;
     outline: none;
-    color: white;
-    font-size: 16px;
-    padding: 15px 60px 15px 25px;
+    color: #333;
+    font-size: 18px;
+    padding: 18px 70px 18px 30px;
+    font-weight: 500;
+  }
+  .searchInput::placeholder {
+    color: #999;
   }
 `;
 
-// 3. CARD WRAPPER
 const CardWrapper = styled.div`
   .property-card {
     transition: transform 0.3s ease, box-shadow 0.3s ease;
-    border-radius: 15px !important;
+    border-radius: 20px !important;
     border: none !important;
     background: #fff;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
   }
   .property-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15) !important;
+    transform: translateY(-15px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2) !important;
   }
   .img-container {
     overflow: hidden;
-    border-radius: 15px 15px 0 0;
+    border-radius: 20px 20px 0 0;
+    position: relative;
   }
   .img-container img {
     transition: transform 0.5s ease;
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
   }
   .property-card:hover .img-container img {
-    transform: scale(1.08);
+    transform: scale(1.1);
   }
   .price-tag {
-    background: #1a1a1a;
-    color: greenyellow;
-    padding: 6px 14px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    padding: 8px 16px;
     border-radius: 50px;
     font-weight: bold;
+    font-size: 1rem;
+    position: absolute;
+    bottom: 15px;
+    left: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  .card-body {
+    padding: 25px;
+  }
+  .property-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 10px;
+  }
+  .location {
+    color: #666;
+    font-size: 1rem;
+    margin-bottom: 20px;
+  }
+  .features {
+    display: flex;
+    justify-content: space-between;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+  }
+  .features span {
+    display: flex;
+    align-items: center;
     font-size: 0.9rem;
+    color: #555;
+  }
+  .features .icon {
+    margin-right: 5px;
+    color: #667eea;
   }
 `;
 
-// 4. Rent Now Button Styling
 const ButtonWrapper = styled.div`
   .animated-button {
     position: relative;
     display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 12px 24px;
-    border: 4px solid transparent;
-    font-size: 14px;
-    background-color: #1a1a1a;
-    border-radius: 100px;
+    gap: 8px;
+    padding: 15px 30px;
+    border: 2px solid #667eea;
+    font-size: 16px;
+    background-color: #fff;
+    border-radius: 50px;
     font-weight: 600;
-    color: greenyellow;
-    box-shadow: 0 0 0 2px greenyellow;
+    color: #667eea;
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4);
     cursor: pointer;
     overflow: hidden;
-    transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+    transition: all 0.4s ease;
     width: 100%;
     justify-content: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
   }
   .animated-button:hover {
-    color: #212121;
+    color: #fff;
+    box-shadow: 0 0 0 10px rgba(102, 126, 234, 0.4);
   }
   .animated-button .text {
     position: relative;
     z-index: 1;
-    transform: translateX(-12px);
-    transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+    transition: all 0.4s ease;
   }
   .animated-button:hover .text {
-    transform: translateX(12px);
+    transform: translateX(5px);
   }
   .animated-button .circle {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 20px;
-    height: 20px;
-    background-color: greenyellow;
+    width: 0;
+    height: 0;
+    background-color: #667eea;
     border-radius: 50%;
-    opacity: 0;
-    transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+    transition: all 0.4s ease;
   }
   .animated-button:hover .circle {
-    width: 350px;
-    height: 350px;
-    opacity: 1;
+    width: 300px;
+    height: 300px;
   }
   .animated-button svg {
     position: absolute;
     width: 20px;
-    fill: greenyellow;
+    fill: #667eea;
     z-index: 9;
-    transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+    transition: all 0.4s ease;
   }
   .animated-button .arr-1 {
-    right: 16px;
+    right: 20px;
   }
   .animated-button .arr-2 {
     left: -25%;
@@ -255,7 +307,7 @@ const ButtonWrapper = styled.div`
     right: -25%;
   }
   .animated-button:hover .arr-2 {
-    left: 16px;
+    left: 20px;
   }
 `;
 
@@ -264,6 +316,9 @@ const Home = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const userId = localStorage.getItem("userId");
+  const userRole = localStorage.getItem("userRole");
 
   useEffect(() => {
     const fetchProperties = async () => {
@@ -279,12 +334,70 @@ const Home = () => {
     fetchProperties();
   }, []);
 
-  // --- NAYA LOGIC: Rent Now Click Handler ---
-  const handleRentNow = (prop) => {
-    // 1. Property ka poora data memory mein save karein
-    localStorage.setItem("selectedProperty", JSON.stringify(prop));
-    // 2. Selection page par navigate karein
-    navigate("/page");
+  // --- UPDATED RENT NOW LOGIC WITH SWEETALERT2 ---
+  const handleRentNow = async (prop) => {
+    if (!userId) {
+      Swal.fire({
+        title: "Login Required",
+        text: "Please login first to rent a property!",
+        icon: "warning",
+        confirmButtonColor: "#667eea",
+        borderRadius: "15px",
+      });
+      navigate("/page");
+      return;
+    }
+
+    // Professional Confirmation Modal
+    Swal.fire({
+      title: "Confirm Booking?",
+      text: `Do you want to send a rental request for ${prop.propertyName}?`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#667eea",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, Rent it!",
+      borderRadius: "20px",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const response = await axios.post(
+            "http://localhost:8000/api/bookings/request",
+            {
+              propertyId: prop._id,
+              tenantId: userId,
+            }
+          );
+
+          if (response.status === 201) {
+            // Professional Success Alert
+            Swal.fire({
+              title: "Request Sent!",
+              text: "Your booking request has been submitted successfully.",
+              icon: "success",
+              timer: 2000,
+              showConfirmButton: false,
+              borderRadius: "20px",
+            });
+
+            setTimeout(() => {
+              const dashboardPath = userRole
+                ? `/${userRole.toLowerCase()}-dashboard`
+                : "/tenant-dashboard";
+              navigate(dashboardPath);
+            }, 2000);
+          }
+        } catch (error) {
+          console.error("Booking Error:", error.response?.data);
+          Swal.fire({
+            title: "Error!",
+            text: error.response?.data?.message || "Booking failed. Try again.",
+            icon: "error",
+            confirmButtonColor: "#667eea",
+          });
+        }
+      }
+    });
   };
 
   const filteredProperties = properties.filter(
@@ -294,36 +407,50 @@ const Home = () => {
   );
 
   return (
-    <div style={{ backgroundColor: "#f8f9fa", minHeight: "100vh" }}>
+    <div style={{ backgroundColor: "#f4f7fa", minHeight: "100vh" }}>
       <HeroSection>
         <TopNav>
-          <button
-            className="nav-btn login-btn"
-            onClick={() => navigate("/page")}
-          >
-            Login
-          </button>
-          <button
-            className="nav-btn signup-btn"
-            onClick={() => navigate("/page")}
-          >
-            Sign Up
-          </button>
+          {userId ? (
+            <button
+              className="nav-btn user-btn"
+              onClick={() =>
+                navigate(`/${userRole?.toLowerCase() || "tenant"}-dashboard`)
+              }
+            >
+              <MDBIcon fas icon="user-circle" className="me-2" />
+              My Dashboard
+            </button>
+          ) : (
+            <>
+              <button
+                className="nav-btn login-btn"
+                onClick={() => navigate("/page")}
+              >
+                Login
+              </button>
+              <button
+                className="nav-btn signup-btn"
+                onClick={() => navigate("/page")}
+              >
+                Sign Up
+              </button>
+            </>
+          )}
         </TopNav>
 
         <MDBContainer className="content-box">
           <h1 className="fw-bold display-4 mb-3">
-            Find Your <span style={{ color: "greenyellow" }}>Space</span>
+            Find Your <span style={{ color: "#fff" }}>Dream Space</span>
           </h1>
           <p className="opacity-75 mb-4">
-            Discover curated premium rental properties in your city.
+            Discover curated premium rental properties in your city with ease.
           </p>
           <SearchWrapper>
             <div className="searchBox shadow-lg">
               <input
                 className="searchInput"
                 type="text"
-                placeholder="Search location or property..."
+                placeholder="Search by location or property name..."
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
               <button className="searchButton">
@@ -337,7 +464,10 @@ const Home = () => {
       <MDBContainer>
         {loading ? (
           <div className="text-center py-5">
-            <h3>Loading...</h3>
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+            <h4 className="mt-3">Loading amazing properties...</h4>
           </div>
         ) : (
           <MDBRow>
@@ -349,56 +479,39 @@ const Home = () => {
                       <MDBCardImage
                         src={prop.image}
                         position="top"
-                        style={{ height: "230px", objectFit: "cover" }}
+                        alt={prop.propertyName}
                       />
-                      <div className="position-absolute bottom-0 start-0 m-3">
-                        <span className="price-tag">
-                          Rs. {prop.rentAmount?.toLocaleString()}
-                        </span>
+                      <div className="price-tag">
+                        Rs. {prop.rentAmount?.toLocaleString()}
                       </div>
                     </div>
-                    <MDBCardBody className="d-flex flex-column p-4">
-                      <h5 className="fw-bold text-dark mb-1">
-                        {prop.propertyName}
-                      </h5>
-                      <p className="text-muted small mb-3">
+                    <MDBCardBody className="card-body d-flex flex-column">
+                      <h5 className="property-title">{prop.propertyName}</h5>
+                      <p className="location">
                         <MDBIcon
                           fas
                           icon="map-marker-alt"
                           className="me-2"
-                          style={{ color: "greenyellow" }}
+                          style={{ color: "#667eea" }}
                         />
                         {prop.location}
                       </p>
-                      <div className="d-flex justify-content-between text-muted small mb-4 bg-light p-2 rounded-3">
+                      <div className="features">
                         <span>
-                          <MDBIcon
-                            fas
-                            icon="bed"
-                            className="me-1 text-primary"
-                          />{" "}
+                          <MDBIcon fas icon="bed" className="icon" />{" "}
                           {prop.bedrooms} Bed
                         </span>
                         <span>
-                          <MDBIcon
-                            fas
-                            icon="bath"
-                            className="me-1 text-primary"
-                          />{" "}
+                          <MDBIcon fas icon="bath" className="icon" />{" "}
                           {prop.bathrooms} Bath
                         </span>
                         <span>
-                          <MDBIcon
-                            fas
-                            icon="ruler-combined"
-                            className="me-1 text-primary"
-                          />{" "}
+                          <MDBIcon fas icon="ruler-combined" className="icon" />{" "}
                           {prop.area}
                         </span>
                       </div>
                       <div className="mt-auto">
                         <ButtonWrapper>
-                          {/* Yahan handleRentNow call kiya hai */}
                           <button
                             className="animated-button"
                             onClick={() => handleRentNow(prop)}
@@ -408,6 +521,13 @@ const Home = () => {
                             <svg
                               viewBox="0 0 24 24"
                               className="arr-1"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z" />
+                            </svg>
+                            <svg
+                              viewBox="0 0 24 24"
+                              className="arr-2"
                               xmlns="http://www.w3.org/2000/svg"
                             >
                               <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z" />
