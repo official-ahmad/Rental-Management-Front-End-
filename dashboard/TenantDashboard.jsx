@@ -556,7 +556,8 @@ const TenantDashboard = () => {
                           >
                             <FaWallet className="me-2" /> Pay Now
                           </MDBBtn>
-                        ) : b.paymentStatus === "Paid" ? (
+                        ) : b.paymentStatus === "Paid" ||
+                          b.status === "Paid" ? (
                           <MDBBadge color="info" pill>
                             Paid Successfully
                           </MDBBadge>
@@ -583,6 +584,7 @@ const TenantDashboard = () => {
                     </td>
                   </tr>
                 )}
+                ;
               </MDBTableBody>
             </MDBTable>
           </MDBCardBody>
