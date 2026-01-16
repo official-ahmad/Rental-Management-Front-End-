@@ -83,6 +83,51 @@ const TenantDashboard = () => {
     }
   }, [userId]);
 
+  // const handlePayment = (bookingId, amount, propertyName) => {
+  //   if (walletBalance < amount) {
+  //     return Swal.fire({
+  //       title: "Insufficient Balance!",
+  //       text: "Please Recharge!.",
+  //       icon: "error",
+  //       borderRadius: "20px",
+  //     });
+  //   }
+
+  //   Swal.fire({
+  //     title: "Confirm Payment",
+  //     text: `Do you want to pay ₹${amount.toLocaleString()} for ${propertyName} now?`,
+  //     icon: "question",
+  //     showCancelButton: true,
+  //     confirmButtonColor: "#10b981",
+  //     cancelButtonColor: "#d33",
+  //     confirmButtonText: "Yes, Pay Now!",
+  //     borderRadius: "20px",
+  //   }).then(async (result) => {
+  //     if (result.isConfirmed) {
+  //       try {
+  //         setWalletBalance((prev) => prev - amount);
+
+  //         setBookings((prev) =>
+  //           prev.map((b) =>
+  //             b._id === bookingId ? { ...b, paymentStatus: "Paid" } : b
+  //           )
+  //         );
+
+  //         Swal.fire({
+  //           title: "Success!",
+  //           text:
+  //             "Rent paid successfully. Transaction ID: TXN-" +
+  //             Math.floor(Math.random() * 1000000),
+  //           icon: "success",
+  //           borderRadius: "20px",
+  //         });
+  //       } catch (error) {
+  //         toast.error("Payment failed to sync with server.");
+  //       }
+  //     }
+  //   });
+  // };
+
   const handlePayment = (bookingId, amount, propertyName) => {
     if (walletBalance < amount) {
       return Swal.fire({
@@ -105,29 +150,38 @@ const TenantDashboard = () => {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          setWalletBalance((prev) => prev - amount);
-
-          setBookings((prev) =>
-            prev.map((b) =>
-              b._id === bookingId ? { ...b, paymentStatus: "Paid" } : b
-            )
+          // --- ASALI DATABASE UPDATE (BACKEND CALL) ---
+          const res = await axios.put(
+            `https://rental-management-back-end-production.up.railway.app/api/bookings/pay/${bookingId}`
           );
 
-          Swal.fire({
-            title: "Success!",
-            text:
-              "Rent paid successfully. Transaction ID: TXN-" +
-              Math.floor(Math.random() * 1000000),
-            icon: "success",
-            borderRadius: "20px",
-          });
+          if (res.status === 200) {
+            // Database update hone ke baad hi wallet aur UI update karein
+            setWalletBalance((prev) => prev - amount);
+
+            setBookings((prev) =>
+              prev.map((b) =>
+                b._id === bookingId ? { ...b, paymentStatus: "Paid" } : b
+              )
+            );
+
+            Swal.fire({
+              title: "Success!",
+              text: "Rent paid successfully and saved in database!",
+              icon: "success",
+              borderRadius: "20px",
+            });
+
+            // Data re-fetch karlein taake sync rahe
+            fetchTenantData();
+          }
         } catch (error) {
-          toast.error("Payment failed to sync with server.");
+          console.error("Payment Sync Error:", error);
+          toast.error("Payment failed to save on server. Please try again.");
         }
       }
     });
   };
-
   const handleCancelBooking = async (bookingId) => {
     Swal.fire({
       title: "Confirm Cancellation",
