@@ -36,10 +36,9 @@ const Login = () => {
         return;
       }
 
-      // --- LOGIC FIX: MongoDB uses _id ---
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("userRole", res.data.user.role);
-      localStorage.setItem("userId", res.data.user._id); // Yahan _id aayega
+      localStorage.setItem("userId", res.data.user._id);
       localStorage.setItem("userName", res.data.user.name);
 
       toast.success(`Welcome ${res.data.user.name}!`);
@@ -113,7 +112,7 @@ const Login = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                   />
-                  <div style={{ position: "relative", marginBottom: "1.5rem" }}>
+                  <div style={{ position: "relative" }}>
                     <MDBInput
                       wrapperClass="mb-0"
                       label="Password"
@@ -140,6 +139,22 @@ const Login = () => {
                       )}
                     </span>
                   </div>
+
+                  {/* --- FORGOT PASSWORD LINK ADDED --- */}
+                  <div className="text-end mb-4 mt-2">
+                    <span
+                      onClick={() => navigate("/forgot-password")}
+                      style={{
+                        color: "#667eea",
+                        cursor: "pointer",
+                        fontSize: "0.85rem",
+                        fontWeight: "500",
+                      }}
+                    >
+                      Forgot Password?
+                    </span>
+                  </div>
+
                   <select
                     className="form-select mb-4"
                     value={role}

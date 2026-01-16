@@ -11,13 +11,12 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans">
-      {/* Dynamic Background Blurs */}
+     
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
         <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] rounded-full bg-blue-100/50 blur-[120px]" />
         <div className="absolute bottom-[0%] right-[0%] w-[30%] h-[30%] rounded-full bg-indigo-100/50 blur-[100px]" />
       </div>
 
-      {/* Hero Section */}
       <div className="text-center mb-16 relative">
         <h1 className="text-5xl md:text-7xl font-black text-gray-900 mb-6 tracking-tight">
           Welcome to Our <br />

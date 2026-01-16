@@ -36,7 +36,6 @@ import {
   MDBInput,
 } from "mdb-react-ui-kit";
 
-// --- DATE FORMATTER HELPER ---
 const formatDate = (dateValue) => {
   if (!dateValue) return "—";
   const date = new Date(dateValue);
@@ -133,7 +132,6 @@ const ManagerDashboard = () => {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Ensuring numbers are sent correctly
       const finalData = {
         ...formData,
         rentAmount: Number(formData.rentAmount),
@@ -665,7 +663,6 @@ const ManagerDashboard = () => {
                     </select>
                   </div>
 
-                  {/* --- NEW BEDROOMS & BATHROOMS FIELDS --- */}
                   <div className="col-md-6">
                     <label className="small fw-bold text-muted">Bedrooms</label>
                     <MDBInput
@@ -690,7 +687,6 @@ const ManagerDashboard = () => {
                       required
                     />
                   </div>
-                  {/* -------------------------------------- */}
 
                   <div className="col-md-12">
                     <label className="small fw-bold text-muted">
