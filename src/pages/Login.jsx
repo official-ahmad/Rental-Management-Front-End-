@@ -24,10 +24,13 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:8000/api/auth/login", {
-        email,
-        password,
-      });
+      const res = await axios.post(
+        "https://rental-management-back-end-production.up.railway.app/api/auth/login",
+        {
+          email,
+          password,
+        }
+      );
 
       if (role !== res.data.user.role) {
         toast.error(

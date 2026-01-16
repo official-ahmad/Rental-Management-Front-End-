@@ -73,7 +73,7 @@ const TenantDashboard = () => {
     }
     try {
       const res = await axios.get(
-        `http://localhost:8000/api/bookings/my-booking/${userId}`
+        `https://rental-management-back-end-production.up.railway.app/api/bookings/my-booking/${userId}`
       );
       setBookings(res.data);
     } catch (err) {
@@ -143,7 +143,7 @@ const TenantDashboard = () => {
       if (result.isConfirmed) {
         try {
           const res = await axios.delete(
-            `http://localhost:8000/api/bookings/cancel/${bookingId}`
+            `https://rental-management-back-end-production.up.railway.app/api/bookings/cancel/${bookingId}`
           );
           if (res.status === 200) {
             toast.success("Request cancelled successfully!");
@@ -178,7 +178,7 @@ const TenantDashboard = () => {
         managerId: selectedProp.managerId || "6784d8583be59d1b64010915",
       };
       const res = await axios.post(
-        "http://localhost:8000/api/bookings/request",
+        "https://rental-management-back-end-production.up.railway.app/api/bookings/request",
         payload
       );
       if (res.status === 201 || res.status === 200) {

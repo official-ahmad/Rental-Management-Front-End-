@@ -361,7 +361,9 @@ const Home = () => {
   useEffect(() => {
     const fetchProperties = async () => {
       try {
-        const response = await axios.get("http://localhost:8000/api/home/all");
+        const response = await axios.get(
+          "https://rental-management-back-end-production.up.railway.app/api/home/all"
+        );
         setProperties(response.data);
         setLoading(false);
       } catch (error) {
@@ -400,7 +402,7 @@ const Home = () => {
       if (result.isConfirmed) {
         try {
           const response = await axios.post(
-            "http://localhost:8000/api/bookings/create",
+            "https://rental-management-back-end-production.up.railway.app/api/bookings/create",
             {
               propertyId: prop._id,
               tenantId: userId,

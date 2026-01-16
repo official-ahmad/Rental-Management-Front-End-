@@ -43,7 +43,8 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const role = localStorage.getItem("userRole");
   const adminName = localStorage.getItem("userName") || "Super Admin";
-  const API_BASE = "http://localhost:8000/api/manager";
+  const API_BASE =
+    "https://rental-management-back-end-production.up.railway.app/api/manager";
 
   // UI States
   const [searchQuery, setSearchQuery] = useState("");
