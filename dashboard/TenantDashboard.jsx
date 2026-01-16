@@ -64,7 +64,11 @@ const TenantDashboard = () => {
   const [bookings, setBookings] = useState([]);
   const [selectedProp, setSelectedProp] = useState(null);
 
-  const [walletBalance, setWalletBalance] = useState(50000000000);
+  // const [walletBalance, setWalletBalance] = useState(50000000000);
+  const [walletBalance, setWalletBalance] = useState(() => {
+    const savedBalance = localStorage.getItem("walletBalance");
+    return savedBalance ? parseInt(savedBalance) : 500000; // Default 5 Lakh rakh lein ya jo aap chahen
+  });
 
   const fetchTenantData = useCallback(async () => {
     if (!userId || userId === "") {
@@ -84,6 +88,7 @@ const TenantDashboard = () => {
   }, [userId]);
 
   // const handlePayment = (bookingId, amount, propertyName) => {
+
   //   if (walletBalance < amount) {
   //     return Swal.fire({
   //       title: "Insufficient Balance!",
@@ -105,24 +110,34 @@ const TenantDashboard = () => {
   //   }).then(async (result) => {
   //     if (result.isConfirmed) {
   //       try {
-  //         setWalletBalance((prev) => prev - amount);
-
-  //         setBookings((prev) =>
-  //           prev.map((b) =>
-  //             b._id === bookingId ? { ...b, paymentStatus: "Paid" } : b
-  //           )
+  //         // --- ASALI DATABASE UPDATE (BACKEND CALL) ---
+  //         const res = await axios.put(
+  //           `https://rental-management-back-end-production.up.railway.app/api/bookings/pay/${bookingId}`
   //         );
 
-  //         Swal.fire({
-  //           title: "Success!",
-  //           text:
-  //             "Rent paid successfully. Transaction ID: TXN-" +
-  //             Math.floor(Math.random() * 1000000),
-  //           icon: "success",
-  //           borderRadius: "20px",
-  //         });
+  //         if (res.status === 200) {
+  //           // Database update hone ke baad hi wallet aur UI update karein
+  //           setWalletBalance((prev) => prev - amount);
+
+  //           setBookings((prev) =>
+  //             prev.map((b) =>
+  //               b._id === bookingId ? { ...b, paymentStatus: "Paid" } : b
+  //             )
+  //           );
+
+  //           Swal.fire({
+  //             title: "Success!",
+  //             text: "Rent paid successfully and saved in database!",
+  //             icon: "success",
+  //             borderRadius: "20px",
+  //           });
+
+  //           // Data re-fetch karlein taake sync rahe
+  //           fetchTenantData();
+  //         }
   //       } catch (error) {
-  //         toast.error("Payment failed to sync with server.");
+  //         console.error("Payment Sync Error:", error);
+  //         toast.error("Payment failed to save on server. Please try again.");
   //       }
   //     }
   //   });
@@ -150,14 +165,20 @@ const TenantDashboard = () => {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          // --- ASALI DATABASE UPDATE (BACKEND CALL) ---
+          // 1. Backend ko update bhejien
           const res = await axios.put(
             `https://rental-management-back-end-production.up.railway.app/api/bookings/pay/${bookingId}`
           );
 
           if (res.status === 200) {
-            // Database update hone ke baad hi wallet aur UI update karein
-            setWalletBalance((prev) => prev - amount);
+            // 2. Naya balance calculate karein
+            const newBalance = walletBalance - amount;
+
+            // 3. Screen par update karein
+            setWalletBalance(newBalance);
+
+            // 4. BROWSER MEIN PERMANENT SAVE KAREIN (ZAROORI)
+            localStorage.setItem("walletBalance", newBalance);
 
             setBookings((prev) =>
               prev.map((b) =>
@@ -172,12 +193,11 @@ const TenantDashboard = () => {
               borderRadius: "20px",
             });
 
-            // Data re-fetch karlein taake sync rahe
             fetchTenantData();
           }
         } catch (error) {
           console.error("Payment Sync Error:", error);
-          toast.error("Payment failed to save on server. Please try again.");
+          toast.error("Payment failed to save on server.");
         }
       }
     });
