@@ -45,7 +45,7 @@ import Swal from "sweetalert2";
 
 const buttonStyle = {
   borderRadius: "25px",
-  padding: "10px 20px",
+  padding: "12px 24px",
   transition: "all 0.3s ease",
   fontWeight: "600",
   textTransform: "none",
@@ -64,9 +64,10 @@ const TenantDashboard = () => {
   const [bookings, setBookings] = useState([]);
   const [selectedProp, setSelectedProp] = useState(null);
 
+  // const [walletBalance, setWalletBalance] = useState(50000000000);
   const [walletBalance, setWalletBalance] = useState(() => {
     const savedBalance = localStorage.getItem("walletBalance");
-    return savedBalance ? parseInt(savedBalance) : 500000;
+    return savedBalance ? parseInt(savedBalance) : 500000; // Default 5 Lakh rakh lein ya jo aap chahen
   });
 
   const fetchTenantData = useCallback(async () => {
@@ -85,6 +86,62 @@ const TenantDashboard = () => {
       setLoading(false);
     }
   }, [userId]);
+
+  // const handlePayment = (bookingId, amount, propertyName) => {
+
+  //   if (walletBalance < amount) {
+  //     return Swal.fire({
+  //       title: "Insufficient Balance!",
+  //       text: "Please Recharge!.",
+  //       icon: "error",
+  //       borderRadius: "20px",
+  //     });
+  //   }
+
+  //   Swal.fire({
+  //     title: "Confirm Payment",
+  //     text: `Do you want to pay ₹${amount.toLocaleString()} for ${propertyName} now?`,
+  //     icon: "question",
+  //     showCancelButton: true,
+  //     confirmButtonColor: "#10b981",
+  //     cancelButtonColor: "#d33",
+  //     confirmButtonText: "Yes, Pay Now!",
+  //     borderRadius: "20px",
+  //   }).then(async (result) => {
+  //     if (result.isConfirmed) {
+  //       try {
+  //         // --- ASALI DATABASE UPDATE (BACKEND CALL) ---
+  //         const res = await axios.put(
+  //           `https://rental-management-back-end-production.up.railway.app/api/bookings/pay/${bookingId}`
+  //         );
+
+  //         if (res.status === 200) {
+  //           // Database update hone ke baad hi wallet aur UI update karein
+  //           setWalletBalance((prev) => prev - amount);
+
+  //           setBookings((prev) =>
+  //             prev.map((b) =>
+  //               b._id === bookingId ? { ...b, paymentStatus: "Paid" } : b
+  //             )
+  //           );
+
+  //           Swal.fire({
+  //             title: "Success!",
+  //             text: "Rent paid successfully and saved in database!",
+  //             icon: "success",
+  //             borderRadius: "20px",
+  //           });
+
+  //           // Data re-fetch karlein taake sync rahe
+  //           fetchTenantData();
+  //         }
+  //       } catch (error) {
+  //         console.error("Payment Sync Error:", error);
+  //         toast.error("Payment failed to save on server. Please try again.");
+  //       }
+  //     }
+  //   });
+  // };
 
   const handlePayment = (bookingId, amount, propertyName) => {
     if (walletBalance < amount) {
@@ -108,13 +165,19 @@ const TenantDashboard = () => {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
+          // 1. Backend ko update bhejien
           const res = await axios.put(
             `https://rental-management-back-end-production.up.railway.app/api/bookings/pay/${bookingId}`
           );
 
           if (res.status === 200) {
+            // 2. Naya balance calculate karein
             const newBalance = walletBalance - amount;
+
+            // 3. Screen par update karein
             setWalletBalance(newBalance);
+
+            // 4. BROWSER MEIN PERMANENT SAVE KAREIN (ZAROORI)
             localStorage.setItem("walletBalance", newBalance);
 
             setBookings((prev) =>
@@ -134,20 +197,21 @@ const TenantDashboard = () => {
           }
         } catch (error) {
           console.error("Payment Sync Error:", error);
-          toast.error("Payment failed. Please check CORS/Server.");
+          toast.error("Payment failed to save on server.");
         }
       }
     });
   };
-
   const handleCancelBooking = async (bookingId) => {
     Swal.fire({
       title: "Confirm Cancellation",
-      text: "Are you sure you want to cancel this request?",
+      text: "Are you sure you want to cancel this request? Ye wapis nahi ayegi!",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
       confirmButtonText: "Yes, cancel it!",
+      cancelButtonText: "No, keep it",
       borderRadius: "15px",
     }).then(async (result) => {
       if (result.isConfirmed) {
@@ -160,7 +224,9 @@ const TenantDashboard = () => {
             fetchTenantData();
           }
         } catch (error) {
-          toast.error("Failed to cancel request.");
+          toast.error(
+            error.response?.data?.message || "Failed to cancel request."
+          );
         }
       }
     });
@@ -168,6 +234,7 @@ const TenantDashboard = () => {
 
   useEffect(() => {
     if (!role || role !== "Tenant") {
+      toast.error("Access denied. Please login as Tenant");
       navigate("/login", { replace: true });
       return;
     }
@@ -195,7 +262,7 @@ const TenantDashboard = () => {
         fetchTenantData();
       }
     } catch (error) {
-      toast.error("Booking request failed.");
+      toast.error(error.response?.data?.message || "Booking request failed.");
     }
   };
 
@@ -205,48 +272,69 @@ const TenantDashboard = () => {
     navigate("/page");
   };
 
-  if (loading) return <div className="text-center py-5">Loading...</div>;
+  if (loading) {
+    return (
+      <div
+        className="d-flex justify-content-center align-items-center vh-100"
+        style={{ backgroundColor: "#f8f9fa" }}
+      >
+        <div className="text-center">
+          <div
+            className="spinner-border text-primary"
+            role="status"
+            style={{ width: "3rem", height: "3rem" }}
+          />
+          <p className="mt-3 text-muted">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ backgroundColor: "#f8f9fa", minHeight: "100vh" }}>
+    <div
+      style={{
+        backgroundColor: "#f8f9fa",
+        minHeight: "100vh",
+        fontFamily: "'Roboto', sans-serif",
+      }}
+    >
       <Toaster position="top-right" />
 
-      {/* FIXED NAVBAR FOR MOBILE */}
+      {/* Navbar  */}
       <MDBNavbar
         expand="lg"
         dark
-        style={{ background: "linear-gradient(135deg, #1e3c72, #2a5298)" }}
+        style={{
+          background: "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)",
+          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+        }}
         className="p-3"
       >
         <MDBContainer fluid>
-          <MDBNavbarBrand className="fw-bold fs-4">
+          <MDBBtn
+            color="light"
+            outline
+            size="sm"
+            className="me-3 d-flex align-items-center gap-2"
+            onClick={() => navigate("/")}
+            style={{ ...buttonStyle, borderColor: "#fff", color: "#fff" }}
+          >
+            <FaArrowLeft /> Back to Home
+          </MDBBtn>
+          <MDBNavbarBrand
+            className="fw-bold text-white"
+            style={{ fontSize: "1.5rem" }}
+          >
             TENANT PORTAL
           </MDBNavbarBrand>
-
-          {/* Mobile Toggler Button */}
-          <MDBNavbarToggler
-            className="text-white border-0 shadow-0"
-            onClick={() => setNavbarOpen(!navbarOpen)}
-          >
+          <MDBNavbarToggler onClick={() => setNavbarOpen(!navbarOpen)}>
             <FaBars />
           </MDBNavbarToggler>
-
           <MDBCollapse navbar isOpen={navbarOpen}>
-            <MDBNavbarNav className="ms-auto d-flex align-items-center flex-column flex-lg-row pt-3 pt-lg-0">
-              <MDBNavbarItem className="mb-3 mb-lg-0">
-                <MDBBtn
-                  color="light"
-                  outline
-                  size="sm"
-                  className="me-lg-3 d-flex align-items-center gap-2"
-                  onClick={() => navigate("/")}
-                  style={{ ...buttonStyle, color: "#fff", borderColor: "#fff" }}
-                >
-                  <FaArrowLeft /> Back to Home
-                </MDBBtn>
-              </MDBNavbarItem>
-              <MDBNavbarItem className="me-lg-3 text-white mb-3 mb-lg-0">
-                <FaUserCircle className="me-2" /> {userName}
+            <MDBNavbarNav className="ms-auto d-flex align-items-center">
+              <MDBNavbarItem className="me-3 text-white d-flex align-items-center">
+                <FaUserCircle className="me-2" style={{ fontSize: "1.2rem" }} />{" "}
+                Welcome, {userName}
               </MDBNavbarItem>
               <MDBNavbarItem>
                 <MDBBtn
@@ -255,7 +343,7 @@ const TenantDashboard = () => {
                   onClick={() => setLogoutModalOpen(true)}
                   style={buttonStyle}
                 >
-                  Logout
+                  <FaSignOutAlt className="me-1" /> Logout
                 </MDBBtn>
               </MDBNavbarItem>
             </MDBNavbarNav>
@@ -263,70 +351,130 @@ const TenantDashboard = () => {
         </MDBContainer>
       </MDBNavbar>
 
-      <MDBContainer className="py-4">
-        {/* Wallet Section (Responsive Padding) */}
+      <MDBContainer className="py-5">
         <MDBRow className="mb-4">
-          <MDBCol>
+          <MDBCol md="12">
             <MDBCard
               className="border-0 shadow-lg text-white"
               style={{
-                background: "linear-gradient(135deg, #059669, #10b981)",
+                background: "linear-gradient(135deg, #059669 0%, #10b981 100%)",
                 borderRadius: "20px",
               }}
             >
               <MDBCardBody className="p-4 d-flex justify-content-between align-items-center">
                 <div>
-                  <h6 className="text-uppercase mb-1 opacity-75 small fw-bold">
+                  <h6
+                    className="text-uppercase mb-1 fw-bold"
+                    style={{ opacity: 0.8 }}
+                  >
                     Available Balance
                   </h6>
-                  <h2 className="fw-bold m-0" style={{ fontSize: "2rem" }}>
+                  <h2 className="fw-bold m-0" style={{ fontSize: "2.5rem" }}>
                     ₹{walletBalance.toLocaleString()}
                   </h2>
+                  <small>* Credits can be used for instant rent payments</small>
                 </div>
-                <div className="bg-white p-3 rounded-circle text-success shadow d-none d-sm-block">
-                  <FaWallet size={30} />
+                <div className="bg-white p-4 rounded-circle text-success shadow-lg">
+                  <FaWallet size={40} />
                 </div>
               </MDBCardBody>
             </MDBCard>
           </MDBCol>
         </MDBRow>
 
-        {/* Status Cards - (Fixed for Mobile Grid) */}
-        <MDBRow className="g-3 mb-4">
+        {selectedProp && (
+          <MDBCard
+            className="mb-5 border-0 shadow-lg"
+            style={{
+              background: "linear-gradient(90deg, #e8f5e8 0%, #f0f9ff 100%)",
+              borderRadius: "20px",
+              border: "1px solid #d4edda",
+            }}
+          >
+            <MDBCardBody className="p-4 d-flex align-items-center justify-content-between flex-wrap">
+              <div className="d-flex align-items-center">
+                <div
+                  style={{
+                    fontSize: "3rem",
+                    color: "#28a745",
+                    marginRight: "15px",
+                  }}
+                >
+                  <FaHome />
+                </div>
+                <div>
+                  <h4 className="fw-bold text-success mb-1">
+                    Complete Your Booking
+                  </h4>
+                  <p className="mb-0 text-muted">
+                    Selected: <strong>{selectedProp.propertyName}</strong> in{" "}
+                    {selectedProp.location}
+                  </p>
+                </div>
+              </div>
+              <MDBBtn
+                color="success"
+                style={{
+                  ...buttonStyle,
+                  backgroundColor: "#28a745",
+                  borderColor: "#28a745",
+                }}
+                onClick={handleConfirmBooking}
+              >
+                <FaCheck className="me-2" /> Confirm & Send Request
+              </MDBBtn>
+            </MDBCardBody>
+          </MDBCard>
+        )}
+
+        {/* Status Cards (Same Design) */}
+        <MDBRow className="mb-5">
           <StatusCard
             icon={<FaHome />}
-            title="Property"
+            title="Active Property"
             value={
-              latestBooking ? latestBooking.propertyId?.propertyName : "None"
+              latestBooking
+                ? latestBooking.propertyId?.propertyName
+                : "No Selection"
+            }
+            subtitle={
+              latestBooking
+                ? latestBooking.propertyId?.location
+                : "Browse properties on the Home page"
             }
             color="#007bff"
             progress={latestBooking ? 100 : 0}
           />
           <StatusCard
             icon={<FaFileInvoiceDollar />}
-            title="Status"
-            value={latestBooking ? latestBooking.status : "No Request"}
-            color="#ffc107"
-            progress={latestBooking?.status === "Approved" ? 100 : 50}
-          />
-          {/* <StatusCard
-            icon={<FaTools />}
-            title="Monthly Rent"
-            value={
-              latestBooking
-                ? `Rs. ${latestBooking.propertyId?.rentAmount}`
-                : "Rs. 0"
+            title="Request Status"
+            value={latestBooking ? latestBooking.status : "No Active Request"}
+            subtitle={
+              latestBooking?.status === "Pending"
+                ? "Awaiting manager approval"
+                : "View history in the table below"
             }
-            color="#198754"
-            progress={latestBooking ? 100 : 0}
-          /> */}
-          // TenantDashboard.jsx mein jahan StatusCard hain (Line 350 ke paas)
+            color={
+              latestBooking?.status === "Pending"
+                ? "#ffc107"
+                : latestBooking?.status === "Approved"
+                ? "#198754"
+                : "#dc3545"
+            }
+            progress={
+              latestBooking
+                ? latestBooking.status === "Approved"
+                  ? 100
+                  : 50
+                : 0
+            }
+          />
           <StatusCard
             icon={<FaTools />}
             title="Monthly Rent"
             value={
-              latestBooking?.propertyId?.rentAmount
-                ? `Rs. ${latestBooking.propertyId.rentAmount.toLocaleString()}`
+              latestBooking
+                ? `Rs. ${latestBooking.propertyId?.rentAmount?.toLocaleString()}`
                 : "Rs. 0"
             }
             subtitle="As per rental agreement"
@@ -335,36 +483,55 @@ const TenantDashboard = () => {
           />
         </MDBRow>
 
-        {/* Table - Fully Responsive */}
         <MDBCard
-          className="border-0 shadow-sm"
-          style={{ borderRadius: "20px" }}
+          style={{
+            borderRadius: "20px",
+            boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
+          }}
+          className="border-0"
         >
-          <MDBCardBody className="p-3">
-            <h5 className="fw-bold mb-3">My Bookings</h5>
-            <div className="table-responsive">
-              <MDBTable hover align="middle" className="mb-0" small>
-                <MDBTableHead className="bg-light">
-                  <tr>
-                    <th>Property</th>
-                    <th>Rent</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </MDBTableHead>
-                <MDBTableBody>
-                  {bookings.map((b) => (
+          <MDBCardBody className="p-4">
+            <h5
+              className="fw-bold mb-4 text-dark"
+              style={{ fontSize: "1.5rem" }}
+            >
+              My Booking Requests
+            </h5>
+            <MDBTable
+              hover
+              responsive
+              striped
+              align="middle"
+              style={{ borderRadius: "10px", overflow: "hidden" }}
+            >
+              <MDBTableHead className="bg-primary text-white">
+                <tr>
+                  <th>Property Name</th>
+                  <th>Rent Amount</th>
+                  <th>Request Date</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </MDBTableHead>
+              <MDBTableBody>
+                {bookings.length > 0 ? (
+                  bookings.map((b) => (
                     <tr key={b._id}>
-                      <td className="small fw-bold">
+                      <td className="fw-bold">
                         {b.propertyId?.propertyName || "N/A"}
                       </td>
-                      <td className="small">
-                        Rs. {b.propertyId?.rentAmount?.toLocaleString()}
+                      <td className="text-success fw-semibold">
+                        Rs. {b.propertyId?.rentAmount?.toLocaleString() || 0}
                       </td>
+                      <td>{new Date(b.bookingDate).toLocaleDateString()}</td>
                       <td>
                         <MDBBadge
                           color={
-                            b.status === "Approved" ? "success" : "warning"
+                            b.status === "Pending"
+                              ? "warning"
+                              : b.status === "Approved"
+                              ? "success"
+                              : "danger"
                           }
                           pill
                         >
@@ -372,12 +539,13 @@ const TenantDashboard = () => {
                         </MDBBadge>
                       </td>
                       <td>
+                        {/* --- NEW: Pay Now Logic --- */}
                         {b.status === "Approved" &&
                         b.paymentStatus !== "Paid" ? (
                           <MDBBtn
                             color="success"
                             size="sm"
-                            className="rounded-pill"
+                            className="rounded-pill px-3 shadow-0"
                             onClick={() =>
                               handlePayment(
                                 b._id,
@@ -386,34 +554,43 @@ const TenantDashboard = () => {
                               )
                             }
                           >
-                            Pay
+                            <FaWallet className="me-2" /> Pay Now
                           </MDBBtn>
                         ) : b.paymentStatus === "Paid" ||
                           b.status === "Paid" ? (
                           <MDBBadge color="info" pill>
-                            Paid
+                            Paid Successfully
                           </MDBBadge>
-                        ) : (
+                        ) : b.status === "Pending" ? (
                           <MDBBtn
                             color="danger"
-                            outline
                             size="sm"
+                            outline
+                            style={{ borderRadius: "20px" }}
                             onClick={() => handleCancelBooking(b._id)}
                           >
-                            <FaTrashAlt />
+                            <FaTrashAlt className="me-1" /> Cancel
                           </MDBBtn>
+                        ) : (
+                          <span className="text-muted small">No Actions</span>
                         )}
                       </td>
                     </tr>
-                  ))}
-                </MDBTableBody>
-              </MDBTable>
-            </div>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="text-center py-5 text-muted">
+                      No booking history found.
+                    </td>
+                  </tr>
+                )}
+                ;
+              </MDBTableBody>
+            </MDBTable>
           </MDBCardBody>
         </MDBCard>
       </MDBContainer>
 
-      {/* Logout Modal remains same... */}
       <MDBModal
         open={logoutModalOpen}
         setOpen={setLogoutModalOpen}
@@ -442,7 +619,7 @@ const TenantDashboard = () => {
                 onClick={confirmLogout}
                 style={buttonStyle}
               >
-                <FaCheck /> Logout
+                <FaCheck /> Confirm Logout
               </MDBBtn>
             </MDBModalFooter>
           </MDBModalContent>
@@ -452,22 +629,36 @@ const TenantDashboard = () => {
   );
 };
 
-const StatusCard = ({ icon, title, value, color, progress }) => (
-  <MDBCol xs="12" md="4">
+const StatusCard = ({ icon, title, value, subtitle, color, progress }) => (
+  <MDBCol md="4" className="mb-4">
     <MDBCard
-      className="shadow-sm border-0 h-100"
-      style={{ borderRadius: "15px" }}
+      className="shadow-lg border-0 h-100"
+      style={{ borderRadius: "20px", transition: "transform 0.3s ease" }}
+      onMouseEnter={(e) =>
+        (e.currentTarget.style.transform = "translateY(-5px)")
+      }
+      onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
     >
-      <MDBCardBody className="text-center py-3">
-        <div style={{ fontSize: "2rem", color, marginBottom: "10px" }}>
+      <MDBCardBody className="text-center py-4">
+        <div style={{ fontSize: "3rem", color, marginBottom: "15px" }}>
           {icon}
         </div>
-        <h6 className="text-muted small mb-1">{title}</h6>
-        <h6 className="fw-bold mb-2">{value}</h6>
+        <h6 className="text-muted mb-2">{title}</h6>
+        <h5 className="fw-bold mb-2" style={{ color }}>
+          {value}
+        </h5>
+        <p className="small text-muted mb-3">{subtitle}</p>
         <MDBProgress
           value={progress}
-          style={{ height: "5px" }}
-          color={progress === 100 ? "success" : "warning"}
+          className="mt-2"
+          style={{ height: "8px", borderRadius: "4px" }}
+          color={
+            progress === 100
+              ? "success"
+              : progress === 50
+              ? "warning"
+              : "secondary"
+          }
         />
       </MDBCardBody>
     </MDBCard>
