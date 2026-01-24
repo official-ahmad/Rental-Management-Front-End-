@@ -77,7 +77,7 @@ const TenantDashboard = () => {
     }
     try {
       const res = await axios.get(
-        `https://rental-management-back-end-production.up.railway.app/api/bookings/my-booking/${userId}`
+        `rental-management-back-end-production-0d51.up.railway.app/api/bookings/my-booking/${userId}`,
       );
       setBookings(res.data);
     } catch (err) {
@@ -86,62 +86,6 @@ const TenantDashboard = () => {
       setLoading(false);
     }
   }, [userId]);
-
-  // const handlePayment = (bookingId, amount, propertyName) => {
-
-  //   if (walletBalance < amount) {
-  //     return Swal.fire({
-  //       title: "Insufficient Balance!",
-  //       text: "Please Recharge!.",
-  //       icon: "error",
-  //       borderRadius: "20px",
-  //     });
-  //   }
-
-  //   Swal.fire({
-  //     title: "Confirm Payment",
-  //     text: `Do you want to pay ₹${amount.toLocaleString()} for ${propertyName} now?`,
-  //     icon: "question",
-  //     showCancelButton: true,
-  //     confirmButtonColor: "#10b981",
-  //     cancelButtonColor: "#d33",
-  //     confirmButtonText: "Yes, Pay Now!",
-  //     borderRadius: "20px",
-  //   }).then(async (result) => {
-  //     if (result.isConfirmed) {
-  //       try {
-  //         // --- ASALI DATABASE UPDATE (BACKEND CALL) ---
-  //         const res = await axios.put(
-  //           `https://rental-management-back-end-production.up.railway.app/api/bookings/pay/${bookingId}`
-  //         );
-
-  //         if (res.status === 200) {
-  //           // Database update hone ke baad hi wallet aur UI update karein
-  //           setWalletBalance((prev) => prev - amount);
-
-  //           setBookings((prev) =>
-  //             prev.map((b) =>
-  //               b._id === bookingId ? { ...b, paymentStatus: "Paid" } : b
-  //             )
-  //           );
-
-  //           Swal.fire({
-  //             title: "Success!",
-  //             text: "Rent paid successfully and saved in database!",
-  //             icon: "success",
-  //             borderRadius: "20px",
-  //           });
-
-  //           // Data re-fetch karlein taake sync rahe
-  //           fetchTenantData();
-  //         }
-  //       } catch (error) {
-  //         console.error("Payment Sync Error:", error);
-  //         toast.error("Payment failed to save on server. Please try again.");
-  //       }
-  //     }
-  //   });
-  // };
 
   const handlePayment = (bookingId, amount, propertyName) => {
     if (walletBalance < amount) {
@@ -167,7 +111,7 @@ const TenantDashboard = () => {
         try {
           // 1. Backend ko update bhejien
           const res = await axios.put(
-            `https://rental-management-back-end-production.up.railway.app/api/bookings/pay/${bookingId}`
+            `https://rental-management-back-end-production-0d51.up.railway.app/api/bookings/pay/${bookingId}`,
           );
 
           if (res.status === 200) {
@@ -182,8 +126,8 @@ const TenantDashboard = () => {
 
             setBookings((prev) =>
               prev.map((b) =>
-                b._id === bookingId ? { ...b, paymentStatus: "Paid" } : b
-              )
+                b._id === bookingId ? { ...b, paymentStatus: "Paid" } : b,
+              ),
             );
 
             Swal.fire({
@@ -217,7 +161,7 @@ const TenantDashboard = () => {
       if (result.isConfirmed) {
         try {
           const res = await axios.delete(
-            `https://rental-management-back-end-production.up.railway.app/api/bookings/cancel/${bookingId}`
+            `https://rental-management-back-end-production-0d51.up.railway.app/api/bookings/cancel/${bookingId}`,
           );
           if (res.status === 200) {
             toast.success("Request cancelled successfully!");
@@ -225,7 +169,7 @@ const TenantDashboard = () => {
           }
         } catch (error) {
           toast.error(
-            error.response?.data?.message || "Failed to cancel request."
+            error.response?.data?.message || "Failed to cancel request.",
           );
         }
       }
@@ -252,8 +196,8 @@ const TenantDashboard = () => {
         managerId: selectedProp.managerId || "6784d8583be59d1b64010915",
       };
       const res = await axios.post(
-        "https://rental-management-back-end-production.up.railway.app/api/bookings/request",
-        payload
+        "https://rental-management-back-end-production-0d51.up.railway.app/api/bookings/request",
+        payload,
       );
       if (res.status === 201 || res.status === 200) {
         toast.success("Request sent successfully!");
@@ -458,8 +402,8 @@ const TenantDashboard = () => {
               latestBooking?.status === "Pending"
                 ? "#ffc107"
                 : latestBooking?.status === "Approved"
-                ? "#198754"
-                : "#dc3545"
+                  ? "#198754"
+                  : "#dc3545"
             }
             progress={
               latestBooking
@@ -530,8 +474,8 @@ const TenantDashboard = () => {
                             b.status === "Pending"
                               ? "warning"
                               : b.status === "Approved"
-                              ? "success"
-                              : "danger"
+                                ? "success"
+                                : "danger"
                           }
                           pill
                         >
@@ -550,7 +494,7 @@ const TenantDashboard = () => {
                               handlePayment(
                                 b._id,
                                 b.propertyId?.rentAmount,
-                                b.propertyId?.propertyName
+                                b.propertyId?.propertyName,
                               )
                             }
                           >
@@ -656,8 +600,8 @@ const StatusCard = ({ icon, title, value, subtitle, color, progress }) => (
             progress === 100
               ? "success"
               : progress === 50
-              ? "warning"
-              : "secondary"
+                ? "warning"
+                : "secondary"
           }
         />
       </MDBCardBody>

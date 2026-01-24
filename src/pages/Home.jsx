@@ -362,7 +362,7 @@ const Home = () => {
     const fetchProperties = async () => {
       try {
         const response = await axios.get(
-          "https://rental-management-back-end-production.up.railway.app/api/home/all"
+          "https://rental-management-back-end-production-0d51.up.railway.app/api/home/all"
         );
         setProperties(response.data);
         setLoading(false);
@@ -402,7 +402,7 @@ const Home = () => {
       if (result.isConfirmed) {
         try {
           const response = await axios.post(
-            "https://rental-management-back-end-production.up.railway.app/api/bookings/create",
+            "https://rental-management-back-end-production-0d51.up.railway.app/api/bookings/create",
             {
               propertyId: prop._id,
               tenantId: userId,

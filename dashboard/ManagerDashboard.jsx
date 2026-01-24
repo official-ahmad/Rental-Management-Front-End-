@@ -65,7 +65,7 @@ const ManagerDashboard = () => {
   const [activeTenants, setActiveTenants] = useState([]);
 
   const API_BASE =
-    "https://rental-management-back-end-production.up.railway.app/api/manager";
+    "https://rental-management-back-end-production-0d51.up.railway.app/api/manager";
 
   const [modalOpen, setModalOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
@@ -87,7 +87,7 @@ const ManagerDashboard = () => {
       const [propRes, bookRes] = await Promise.all([
         axios.get(`${API_BASE}/properties`),
         axios.get(
-          "https://rental-management-back-end-production.up.railway.app/api/bookings/all-requests"
+          "https://rental-management-back-end-production-0d51.up.railway.app/api/bookings/all-requests"
         ),
       ]);
       setProperties(propRes.data || []);
@@ -181,7 +181,7 @@ const ManagerDashboard = () => {
   const handleStatusUpdate = async (bookingId, newStatus) => {
     try {
       await axios.put(
-        `https://rental-management-back-end-production.up.railway.app/api/bookings/update/${bookingId}`,
+        `https://rental-management-back-end-production-0d51.up.railway.app/api/bookings/update/${bookingId}`,
         { status: newStatus }
       );
       toast.success(`Booking ${newStatus}!`);

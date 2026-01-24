@@ -25,7 +25,7 @@ const Login = () => {
     e.preventDefault();
     try {
       const res = await axios.post(
-        "https://rental-management-back-end-production.up.railway.app/api/auth/login",
+        "https://rental-management-back-end-production-0d51.up.railway.app/api/auth/login",
         {
           email,
           password,
