@@ -404,7 +404,7 @@ const Home = () => {
       if (result.isConfirmed) {
         try {
           const response = await axios.post(
-            "https://rental-management-back-end.onrender.com//api/bookings/create",
+            "https://rental-management-back-end.onrender.com/api/bookings/create",
             {
               propertyId: prop._id,
               tenantId: userId,
