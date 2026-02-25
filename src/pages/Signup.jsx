@@ -209,7 +209,7 @@ const Signup = () => {
     }
     try {
       const response = await axios.post(
-        "http://localhost:8000/api/auth/register",
+        "https://rental-management-back-end.onrender.com//api/auth/register",
         formData,
       );
       console.log(response.data);

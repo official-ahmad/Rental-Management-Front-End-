@@ -64,7 +64,8 @@ const ManagerDashboard = () => {
   const [properties, setProperties] = useState([]);
   const [activeTenants, setActiveTenants] = useState([]);
 
-  const API_BASE = "http://localhost:8000/api/manager";
+  const API_BASE =
+    "https://rental-management-back-end.onrender.com//api/manager";
 
   const [modalOpen, setModalOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
@@ -85,7 +86,9 @@ const ManagerDashboard = () => {
     try {
       const [propRes, bookRes] = await Promise.all([
         axios.get(`${API_BASE}/properties`),
-        axios.get("http://localhost:8000/api/bookings/all-requests"),
+        axios.get(
+          "https://rental-management-back-end.onrender.com//api/bookings/all-requests",
+        ),
       ]);
       setProperties(propRes.data || []);
       const allBookings = bookRes.data || [];
@@ -178,7 +181,7 @@ const ManagerDashboard = () => {
   const handleStatusUpdate = async (bookingId, newStatus) => {
     try {
       await axios.put(
-        `http://localhost:8000/api/bookings/update/${bookingId}`,
+        `https://rental-management-back-end.onrender.com//api/bookings/update/${bookingId}`,
         { status: newStatus },
       );
       toast.success(`Booking ${newStatus}!`);
