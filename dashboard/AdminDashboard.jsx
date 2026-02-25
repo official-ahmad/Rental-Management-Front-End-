@@ -43,8 +43,7 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const role = localStorage.getItem("userRole");
   const adminName = localStorage.getItem("userName") || "Super Admin";
-  const API_BASE =
-    "https://rental-management-back-end-production-0d51.up.railway.app/api/manager";
+  const API_BASE = "http://localhost:8000/api/manager";
 
   // UI States
   const [searchQuery, setSearchQuery] = useState("");
@@ -92,10 +91,10 @@ const AdminDashboard = () => {
       setProperties(propRes.data || []);
       const allUsers = userRes.data || [];
       const managerList = allUsers.filter(
-        (u) => u.role?.toLowerCase() === "manager"
+        (u) => u.role?.toLowerCase() === "manager",
       );
       const tenantList = allUsers.filter(
-        (u) => u.role?.toLowerCase() === "tenant"
+        (u) => u.role?.toLowerCase() === "tenant",
       );
 
       setManagers(managerList);
@@ -232,7 +231,7 @@ const AdminDashboard = () => {
       (item) =>
         (item.name || item.propertyName || "").toLowerCase().includes(query) ||
         (item.location || "").toLowerCase().includes(query) ||
-        (item.email || "").toLowerCase().includes(query)
+        (item.email || "").toLowerCase().includes(query),
     );
   };
 
@@ -506,7 +505,7 @@ const AdminDashboard = () => {
                           <td>
                             <MDBBadge pill color="info" light className="px-2">
                               {managers.find(
-                                (m) => m._id === (item.owner || item.managerId)
+                                (m) => m._id === (item.owner || item.managerId),
                               )?.name || "System Admin"}
                             </MDBBadge>
                           </td>
@@ -718,7 +717,7 @@ const AdminDashboard = () => {
                           <option key={opt} value={opt}>
                             {opt}
                           </option>
-                        )
+                        ),
                       )}
                     </select>
                   </MDBCol>
@@ -793,7 +792,6 @@ const AdminDashboard = () => {
   );
 };
 
-// HELPER COMPONENTS (Preserved)
 const SidebarItem = ({ icon, label, active, onClick }) => (
   <div
     onClick={onClick}

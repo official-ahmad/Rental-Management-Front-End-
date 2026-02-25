@@ -209,8 +209,8 @@ const Signup = () => {
     }
     try {
       const response = await axios.post(
-        "https://rental-management-back-end-production-0d51.up.railway.app/api/auth/register",
-        formData
+        "http://localhost:8000/api/auth/register",
+        formData,
       );
       console.log(response.data);
       toast.success("Signup successful!");
@@ -218,7 +218,7 @@ const Signup = () => {
     } catch (error) {
       console.error(error);
       toast.error(
-        error.response?.data?.message || "Signup failed. Please try again."
+        error.response?.data?.message || "Signup failed. Please try again.",
       );
     }
   };

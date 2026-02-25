@@ -64,8 +64,7 @@ const ManagerDashboard = () => {
   const [properties, setProperties] = useState([]);
   const [activeTenants, setActiveTenants] = useState([]);
 
-  const API_BASE =
-    "https://rental-management-back-end-production-0d51.up.railway.app/api/manager";
+  const API_BASE = "http://localhost:8000/api/manager";
 
   const [modalOpen, setModalOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
@@ -86,9 +85,7 @@ const ManagerDashboard = () => {
     try {
       const [propRes, bookRes] = await Promise.all([
         axios.get(`${API_BASE}/properties`),
-        axios.get(
-          "https://rental-management-back-end-production-0d51.up.railway.app/api/bookings/all-requests"
-        ),
+        axios.get("http://localhost:8000/api/bookings/all-requests"),
       ]);
       setProperties(propRes.data || []);
       const allBookings = bookRes.data || [];
@@ -181,8 +178,8 @@ const ManagerDashboard = () => {
   const handleStatusUpdate = async (bookingId, newStatus) => {
     try {
       await axios.put(
-        `https://rental-management-back-end-production-0d51.up.railway.app/api/bookings/update/${bookingId}`,
-        { status: newStatus }
+        `http://localhost:8000/api/bookings/update/${bookingId}`,
+        { status: newStatus },
       );
       toast.success(`Booking ${newStatus}!`);
       fetchData();
@@ -213,18 +210,18 @@ const ManagerDashboard = () => {
       return properties.filter(
         (p) =>
           p.propertyName?.toLowerCase().includes(term) ||
-          p.location?.toLowerCase().includes(term)
+          p.location?.toLowerCase().includes(term),
       );
     if (activeTab === "requests")
       return requests.filter(
         (r) =>
           r.tenantId?.name?.toLowerCase().includes(term) ||
-          r.propertyId?.propertyName?.toLowerCase().includes(term)
+          r.propertyId?.propertyName?.toLowerCase().includes(term),
       );
     return activeTenants.filter(
       (t) =>
         t.tenantId?.name?.toLowerCase().includes(term) ||
-        t.propertyId?.propertyName?.toLowerCase().includes(term)
+        t.propertyId?.propertyName?.toLowerCase().includes(term),
     );
   };
 

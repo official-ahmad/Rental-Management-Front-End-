@@ -170,7 +170,9 @@ const SearchWrapper = styled.div`
 
 const CardWrapper = styled.div`
   .property-card {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition:
+      transform 0.3s ease,
+      box-shadow 0.3s ease;
     border-radius: 20px !important;
     border: none !important;
     background: #fff;
@@ -361,9 +363,7 @@ const Home = () => {
   useEffect(() => {
     const fetchProperties = async () => {
       try {
-        const response = await axios.get(
-          "https://rental-management-back-end-production-0d51.up.railway.app/api/home/all"
-        );
+        const response = await axios.get("http://localhost:8000/api/home/all");
         setProperties(response.data);
         setLoading(false);
       } catch (error) {
@@ -402,11 +402,11 @@ const Home = () => {
       if (result.isConfirmed) {
         try {
           const response = await axios.post(
-            "https://rental-management-back-end-production-0d51.up.railway.app/api/bookings/create",
+            "http://localhost:8000/api/bookings/create",
             {
               propertyId: prop._id,
               tenantId: userId,
-            }
+            },
           );
 
           if (response.status === 201) {
@@ -438,7 +438,7 @@ const Home = () => {
   const filteredProperties = properties.filter(
     (prop) =>
       prop.propertyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      prop.location?.toLowerCase().includes(searchTerm.toLowerCase())
+      prop.location?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   return (
