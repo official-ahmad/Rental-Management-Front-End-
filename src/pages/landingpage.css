@@ -26,51 +26,21 @@
 }
 
 .portal-card {
-  background: #fff;
-  padding: 2.5rem 1.5rem; 
-  border-top: 5px solid; 
+  background: #ffffff;
+  padding: 2.5rem 2rem;
+  border-top: 6px solid; 
   border-radius: 15px;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
   text-align: center;
-  width: 320px; 
+  width: 320px;
+  min-height: 280px;
   transition: 0.3s ease;
 }
 
 .portal-card:hover {
-  box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
 }
 
-.portal-btn {
-  /* margin-top: 20px; */
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  border: none;
-  padding: 10px 25px;
-  /* transition: 0.3s; */
-  border-radius: 7px;
-}
-.portal-card {
-  background: #ffffff;
-  padding: 2.5rem 2rem;
-  border-top: 6px solid; 
-  border-radius: 10px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-  min-height: 280px; 
-}
-
-.button{
-  border-radius: 15px;
-  font-size: 1.1rem;
-  padding: 10px;
-  transition: all 0.5s ease-in-out;
-  cursor: pointer
-}
-.button:active {
-  transform: scale(0.95);
-}
-.button:hover {
-  filter: brightness(1.1);
-}
 .portal-btn {
   margin-top: 20px;
   font-weight: 600;
@@ -79,4 +49,36 @@
   padding: 10px 25px;
   transition: 0.3s;
   border-radius: 7px;
+}
+
+.button {
+  border-radius: 15px;
+  font-size: 1.1rem;
+  padding: 10px;
+  transition: all 0.5s ease-in-out;
+  cursor: pointer;
+}
+
+.button:active {
+  transform: scale(0.95);
+}
+
+.button:hover {
+  filter: brightness(1.1);
+}
+
+/* Animation for access modal */
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slideUp {
+  animation: slideUp 0.3s ease forwards;
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast, Toaster } from "react-hot-toast";
 import axios from "axios";
@@ -35,6 +35,7 @@ import {
   MDBModalBody,
   MDBInput,
 } from "mdb-react-ui-kit";
+import { API } from "../src/config/api";
 
 const formatDate = (dateValue) => {
   if (!dateValue) return "—";
@@ -64,8 +65,7 @@ const ManagerDashboard = () => {
   const [properties, setProperties] = useState([]);
   const [activeTenants, setActiveTenants] = useState([]);
 
-  const API_BASE =
-    "https://rental-management-back-end.onrender.com//api/manager";
+  const API_BASE = API.MANAGER.BASE;
 
   const [modalOpen, setModalOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
@@ -82,24 +82,22 @@ const ManagerDashboard = () => {
     status: "Vacant",
   });
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [propRes, bookRes] = await Promise.all([
         axios.get(`${API_BASE}/properties`),
-        axios.get(
-          "https://rental-management-back-end.onrender.com//api/bookings/all-requests",
-        ),
+        axios.get(API.BOOKINGS.ALL_REQUESTS),
       ]);
       setProperties(propRes.data || []);
       const allBookings = bookRes.data || [];
       setRequests(allBookings.filter((req) => req.status === "Pending"));
       setActiveTenants(allBookings.filter((req) => req.status === "Approved"));
-    } catch (err) {
+    } catch {
       toast.error("Failed to load data");
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_BASE]);
 
   useEffect(() => {
     if (!role || role !== "Manager") {
@@ -108,9 +106,9 @@ const ManagerDashboard = () => {
     } else {
       fetchData();
     }
-  }, [role, navigate]);
+  }, [role, navigate, fetchData]);
 
-  const handleOpenModal = (prop = null) => {
+  const handleOpenModal = useCallback((prop = null) => {
     if (prop) {
       setFormData({ ...prop });
       setIsEdit(true);
@@ -130,68 +128,74 @@ const ManagerDashboard = () => {
       setIsEdit(false);
     }
     setModalOpen(true);
-  };
+  }, []);
 
-  const handleFormSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const finalData = {
-        ...formData,
-        rentAmount: Number(formData.rentAmount),
-        bedrooms: Number(formData.bedrooms),
-        bathrooms: Number(formData.bathrooms),
-      };
+  const handleFormSubmit = useCallback(
+    async (e) => {
+      e.preventDefault();
+      try {
+        const finalData = {
+          ...formData,
+          rentAmount: Number(formData.rentAmount),
+          bedrooms: Number(formData.bedrooms),
+          bathrooms: Number(formData.bathrooms),
+        };
 
-      if (isEdit) {
-        await axios.put(`${API_BASE}/update/${formData._id}`, finalData);
-        toast.success("Property Updated!");
-      } else {
-        const { _id, ...newPropertyData } = finalData;
-        await axios.post(`${API_BASE}/add`, newPropertyData);
-        toast.success("Property Added Successfully!");
-      }
-      setModalOpen(false);
-      fetchData();
-    } catch (err) {
-      toast.error(err.response?.data?.error || "Operation failed");
-    }
-  };
-
-  const handleDelete = (id) => {
-    Swal.fire({
-      title: "Are you sure?",
-      text: "You won't be able to revert this property!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#dc3545",
-      confirmButtonText: "Yes, delete it!",
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          await axios.delete(`${API_BASE}/delete/${id}`);
-          toast.success("Property deleted successfully");
-          fetchData();
-        } catch (err) {
-          toast.error("Delete failed");
+        if (isEdit) {
+          await axios.put(`${API_BASE}/update/${formData._id}`, finalData);
+          toast.success("Property Updated!");
+        } else {
+          const { _id, ...newPropertyData } = finalData;
+          await axios.post(`${API_BASE}/add`, newPropertyData);
+          toast.success("Property Added Successfully!");
         }
+        setModalOpen(false);
+        fetchData();
+      } catch (err) {
+        toast.error(err.response?.data?.error || "Operation failed");
       }
-    });
-  };
+    },
+    [formData, isEdit, API_BASE, fetchData],
+  );
 
-  const handleStatusUpdate = async (bookingId, newStatus) => {
-    try {
-      await axios.put(
-        `https://rental-management-back-end.onrender.com//api/bookings/update/${bookingId}`,
-        { status: newStatus },
-      );
-      toast.success(`Booking ${newStatus}!`);
-      fetchData();
-    } catch (err) {
-      toast.error("Update failed");
-    }
-  };
+  const handleDelete = useCallback(
+    (id) => {
+      Swal.fire({
+        title: "Are you sure?",
+        text: "You won't be able to revert this property!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#dc3545",
+        confirmButtonText: "Yes, delete it!",
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          try {
+            await axios.delete(`${API_BASE}/delete/${id}`);
+            toast.success("Property deleted successfully");
+            fetchData();
+          } catch {
+            toast.error("Delete failed");
+          }
+        }
+      });
+    },
+    [API_BASE, fetchData],
+  );
 
-  const handleLogout = () => {
+  const handleStatusUpdate = useCallback(
+    async (bookingId, newStatus) => {
+      try {
+        await axios.put(API.BOOKINGS.UPDATE(bookingId), { status: newStatus });
+        toast.success(`Booking ${newStatus}!`);
+        fetchData();
+      } catch {
+        toast.error("Update failed");
+      }
+    },
+    [fetchData],
+  );
+
+  const handleLogout = useCallback(() => {
     Swal.fire({
       title: "Logout?",
       text: "Ready to end your session?",
@@ -205,30 +209,41 @@ const ManagerDashboard = () => {
         navigate("/page");
       }
     });
-  };
+  }, [navigate]);
 
-  const getFilteredData = () => {
+  // Memoized filtered data for performance
+  const filteredList = useMemo(() => {
     const term = searchTerm.toLowerCase();
-    if (activeTab === "properties")
+    if (activeTab === "properties") {
       return properties.filter(
         (p) =>
           p.propertyName?.toLowerCase().includes(term) ||
           p.location?.toLowerCase().includes(term),
       );
-    if (activeTab === "requests")
+    }
+    if (activeTab === "requests") {
       return requests.filter(
         (r) =>
           r.tenantId?.name?.toLowerCase().includes(term) ||
           r.propertyId?.propertyName?.toLowerCase().includes(term),
       );
+    }
     return activeTenants.filter(
       (t) =>
         t.tenantId?.name?.toLowerCase().includes(term) ||
         t.propertyId?.propertyName?.toLowerCase().includes(term),
     );
-  };
+  }, [activeTab, searchTerm, properties, requests, activeTenants]);
 
-  const filteredList = getFilteredData();
+  // Memoize handlers
+  const handleTabChange = useCallback((tabId) => {
+    setActiveTab(tabId);
+    setSearchTerm("");
+  }, []);
+
+  const handleSearchChange = useCallback((e) => {
+    setSearchTerm(e.target.value);
+  }, []);
 
   if (loading)
     return (
@@ -297,10 +312,7 @@ const ManagerDashboard = () => {
           ].map((item) => (
             <div
               key={item.id}
-              onClick={() => {
-                setActiveTab(item.id);
-                setSearchTerm("");
-              }}
+              onClick={() => handleTabChange(item.id)}
               className="sidebar-item"
               style={{
                 cursor: "pointer",
@@ -356,7 +368,7 @@ const ManagerDashboard = () => {
                   placeholder={`Search ${activeTab}...`}
                   style={{ borderRadius: "10px", height: "45px" }}
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={handleSearchChange}
                 />
               </div>
               {activeTab === "properties" && (

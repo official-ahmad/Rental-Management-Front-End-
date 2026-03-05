@@ -42,6 +42,7 @@ import {
   MDBBadge,
 } from "mdb-react-ui-kit";
 import Swal from "sweetalert2";
+import { API } from "../src/config/api";
 
 const buttonStyle = {
   borderRadius: "25px",
@@ -76,9 +77,7 @@ const TenantDashboard = () => {
       return;
     }
     try {
-      const res = await axios.get(
-        `rental-management-back-end-production-0d51.up.railway.app/api/bookings/my-booking/${userId}`,
-      );
+      const res = await axios.get(API.BOOKINGS.MY_BOOKING(userId));
       setBookings(res.data);
     } catch (err) {
       console.error("Fetch Error:", err.message);
@@ -109,19 +108,13 @@ const TenantDashboard = () => {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          // 1. Backend ko update bhejien
-          const res = await axios.put(
-            `https://rental-management-back-end.onrender.com//api/bookings/pay/${bookingId}`,
-          );
+          const res = await axios.put(API.BOOKINGS.PAY(bookingId));
 
           if (res.status === 200) {
-            // 2. Naya balance calculate karein
             const newBalance = walletBalance - amount;
 
-            // 3. Screen par update karein
             setWalletBalance(newBalance);
 
-            // 4. BROWSER MEIN PERMANENT SAVE KAREIN (ZAROORI)
             localStorage.setItem("walletBalance", newBalance);
 
             setBookings((prev) =>
@@ -160,9 +153,7 @@ const TenantDashboard = () => {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const res = await axios.delete(
-            `https://rental-management-back-end.onrender.com//api/bookings/cancel/${bookingId}`,
-          );
+          const res = await axios.delete(API.BOOKINGS.CANCEL(bookingId));
           if (res.status === 200) {
             toast.success("Request cancelled successfully!");
             fetchTenantData();
@@ -195,10 +186,7 @@ const TenantDashboard = () => {
         tenantId: userId,
         managerId: selectedProp.managerId || "6784d8583be59d1b64010915",
       };
-      const res = await axios.post(
-        "https://rental-management-back-end.onrender.com//api/bookings/request",
-        payload,
-      );
+      const res = await axios.post(API.BOOKINGS.REQUEST, payload);
       if (res.status === 201 || res.status === 200) {
         toast.success("Request sent successfully!");
         localStorage.removeItem("selectedProperty");
@@ -371,7 +359,6 @@ const TenantDashboard = () => {
           </MDBCard>
         )}
 
-        {/* Status Cards (Same Design) */}
         <MDBRow className="mb-5">
           <StatusCard
             icon={<FaHome />}
@@ -528,7 +515,6 @@ const TenantDashboard = () => {
                     </td>
                   </tr>
                 )}
-                ;
               </MDBTableBody>
             </MDBTable>
           </MDBCardBody>

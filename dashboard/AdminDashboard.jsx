@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast, Toaster } from "react-hot-toast";
 import axios from "axios";
@@ -38,13 +38,13 @@ import {
   MDBModalBody,
   MDBModalFooter,
 } from "mdb-react-ui-kit";
+import { API } from "../src/config/api";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const role = localStorage.getItem("userRole");
   const adminName = localStorage.getItem("userName") || "Super Admin";
-  const API_BASE =
-    "https://rental-management-back-end.onrender.com//api/manager";
+  const API_BASE = API.MANAGER.BASE;
 
   // UI States
   const [searchQuery, setSearchQuery] = useState("");
@@ -213,7 +213,8 @@ const AdminDashboard = () => {
     });
   };
 
-  const getDisplayData = () => {
+  // Memoized display data for performance
+  const displayData = useMemo(() => {
     let data = [];
     if (activeTab === "managers") {
       data = managers;
@@ -234,7 +235,7 @@ const AdminDashboard = () => {
         (item.location || "").toLowerCase().includes(query) ||
         (item.email || "").toLowerCase().includes(query),
     );
-  };
+  }, [activeTab, managers, tenants, properties, searchQuery]);
 
   if (loading)
     return (
@@ -433,7 +434,7 @@ const AdminDashboard = () => {
                 </MDBTableHead>
 
                 <MDBTableBody>
-                  {getDisplayData().map((item) => (
+                  {displayData.map((item) => (
                     <tr
                       key={item._id}
                       className="align-middle border-bottom"

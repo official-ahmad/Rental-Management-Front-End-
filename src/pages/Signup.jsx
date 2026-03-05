@@ -4,7 +4,6 @@ import { Toaster, toast } from "react-hot-toast";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import {
-  MDBBtn,
   MDBContainer,
   MDBCard,
   MDBCardBody,
@@ -13,6 +12,7 @@ import {
   MDBCol,
 } from "mdb-react-ui-kit";
 import styled from "styled-components";
+import { API } from "../config/api";
 
 // Reusable Button Component (from your top code, now integrated)
 const Button = ({ onClick, children }) => {
@@ -208,10 +208,7 @@ const Signup = () => {
       return;
     }
     try {
-      const response = await axios.post(
-        "https://rental-management-back-end.onrender.com//api/auth/register",
-        formData,
-      );
+      const response = await axios.post(API.AUTH.REGISTER, formData);
       console.log(response.data);
       toast.success("Signup successful!");
       setTimeout(() => navigate("/login"), 2000);
@@ -387,7 +384,6 @@ const Signup = () => {
                   >
                     <option value="Tenant">Tenant</option>
                     <option value="Manager">Manager</option>
-                    <option value="Admin">Admin</option>
                   </select>
 
                   {/* Replaced the old checkbox with the custom Checkbox component */}

@@ -1,10 +1,9 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { toast, Toaster } from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { useNavigate, useLocation } from "react-router-dom";
+import { FaEye, FaEyeSlash, FaLock, FaTimes } from "react-icons/fa";
 import {
-  MDBBtn,
   MDBContainer,
   MDBCard,
   MDBCardBody,
@@ -13,24 +12,87 @@ import {
   MDBCol,
 } from "mdb-react-ui-kit";
 import styled from "styled-components";
+import { API, API_BASE_URL } from "../config/api";
 
 const Login = () => {
+  const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState("Tenant");
+  const [role, setRole] = useState(location.state?.selectedRole || "Tenant");
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [adminAccessKey, setAdminAccessKey] = useState("");
+  const [isAdminVerified, setIsAdminVerified] = useState(
+    location.state?.selectedRole === "Admin" ||
+      location.state?.selectedRole === "Manager",
+  );
   const navigate = useNavigate();
+
+  const handleRoleChange = (e) => {
+    const selectedRole = e.target.value;
+    setRole(selectedRole);
+    if (selectedRole === "Admin" && !isAdminVerified) {
+      setShowAdminModal(true);
+    }
+  };
+
+  const verifyAdminAccess = async () => {
+    try {
+      const res = await axios.post(
+        `${API_BASE_URL}/api/auth/verify-admin-access`,
+        {
+          accessKey: adminAccessKey,
+        },
+      );
+      if (res.data.success) {
+        toast.success("Access Granted!");
+        setIsAdminVerified(true);
+        setShowAdminModal(false);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Invalid Access Key!");
+      setRole("Tenant");
+      setShowAdminModal(false);
+      setAdminAccessKey("");
+    }
+  };
+
+  const closeAdminModal = () => {
+    setShowAdminModal(false);
+    setRole("Tenant");
+    setAdminAccessKey("");
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post(
-        "https://rental-management-back-end.onrender.com//api/auth/login",
-        {
+      // Admin uses static credentials - separate API
+      if (role === "Admin") {
+        const res = await axios.post(`${API_BASE_URL}/api/auth/admin-login`, {
           email,
           password,
-        },
-      );
+        });
+
+        if (res.data.success) {
+          localStorage.setItem("token", res.data.token);
+          localStorage.setItem("userRole", "Admin");
+          localStorage.setItem("userId", res.data.adminId);
+          localStorage.setItem("userName", res.data.adminName);
+
+          toast.success(`Welcome ${res.data.adminName}!`);
+
+          setTimeout(() => {
+            navigate("/admin-dashboard");
+          }, 1000);
+        }
+        return;
+      }
+
+      // Normal login for Tenant and Manager
+      const res = await axios.post(API.AUTH.LOGIN, {
+        email,
+        password,
+      });
 
       if (role !== res.data.user.role) {
         toast.error(
@@ -67,6 +129,31 @@ const Login = () => {
       }}
     >
       <Toaster />
+
+      {/* Admin Access Modal */}
+      {showAdminModal && (
+        <AdminModal>
+          <ModalContent>
+            <CloseButton onClick={closeAdminModal}>
+              <FaTimes />
+            </CloseButton>
+            <div className="modal-icon">
+              <FaLock size={40} />
+            </div>
+            <h3>Admin Access Required</h3>
+            <p>Enter the secret access key to continue as Admin</p>
+            <input
+              type="password"
+              placeholder="Enter Access Key"
+              value={adminAccessKey}
+              onChange={(e) => setAdminAccessKey(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && verifyAdminAccess()}
+            />
+            <button onClick={verifyAdminAccess}>Verify Access</button>
+          </ModalContent>
+        </AdminModal>
+      )}
+
       <MDBContainer fluid className="p-0">
         <MDBRow className="g-0">
           <MDBCol
@@ -143,7 +230,6 @@ const Login = () => {
                     </span>
                   </div>
 
-                  {/* --- FORGOT PASSWORD LINK ADDED --- */}
                   <div className="text-end mb-4 mt-2">
                     <span
                       onClick={() => navigate("/forgot-password")}
@@ -161,12 +247,16 @@ const Login = () => {
                   <select
                     className="form-select mb-4"
                     value={role}
-                    onChange={(e) => setRole(e.target.value)}
+                    onChange={handleRoleChange}
                     style={{ borderRadius: "10px", padding: "12px 15px" }}
+                    disabled={location.state?.selectedRole === "Admin"}
                   >
                     <option value="Tenant">Tenant</option>
                     <option value="Manager">Manager</option>
-                    <option value="Admin">Admin</option>
+                    {(isAdminVerified ||
+                      location.state?.selectedRole === "Admin") && (
+                      <option value="Admin">Admin</option>
+                    )}
                   </select>
                   <Button />
                 </form>
@@ -353,6 +443,142 @@ const StyledWrapper = styled.div`
     justify-content: center;
     align-items: center;
     margin-bottom: 1.5rem;
+  }
+`;
+
+// Admin Access Modal Styles
+const AdminModal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+  animation: fadeIn 0.3s ease;
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+`;
+
+const ModalContent = styled.div`
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  padding: 40px;
+  border-radius: 20px;
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: slideUp 0.3s ease;
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(30px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .modal-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto 20px;
+    color: white;
+  }
+
+  h3 {
+    color: #fff;
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+
+  p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    margin-bottom: 25px;
+  }
+
+  input {
+    width: 100%;
+    padding: 15px 20px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    font-size: 1rem;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    &:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+    }
+  }
+
+  button {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+    }
+  }
+`;
+
+const CloseButton = styled.button`
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #fff;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: rotate(90deg);
   }
 `;
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import styled from "styled-components";
@@ -12,6 +12,7 @@ import {
   MDBCardImage,
   MDBIcon,
 } from "mdb-react-ui-kit";
+import { API } from "../config/api";
 
 // --- STYLED COMPONENTS ---
 const HeroSection = styled.div`
@@ -360,21 +361,21 @@ const Home = () => {
   const userId = localStorage.getItem("userId");
   const userRole = localStorage.getItem("userRole");
 
-  useEffect(() => {
-    const fetchProperties = async () => {
-      try {
-        const response = await axios.get(
-          "https://rental-management-back-end.onrender.com/api/home/all",
-        );
-        setProperties(response.data);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        setLoading(false);
-      }
-    };
-    fetchProperties();
+  // Memoized fetch function
+  const fetchProperties = useCallback(async () => {
+    try {
+      const response = await axios.get(API.HOME.ALL);
+      setProperties(response.data);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchProperties();
+  }, [fetchProperties]);
 
   const handleRentNow = async (prop) => {
     if (prop.status === "Occupied") return;
@@ -387,7 +388,7 @@ const Home = () => {
         confirmButtonColor: "#667eea",
         borderRadius: "15px",
       });
-      navigate("/page");
+      navigate("/signup");
       return;
     }
 
@@ -403,13 +404,10 @@ const Home = () => {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const response = await axios.post(
-            "https://rental-management-back-end.onrender.com/api/bookings/create",
-            {
-              propertyId: prop._id,
-              tenantId: userId,
-            },
-          );
+          const response = await axios.post(API.BOOKINGS.CREATE, {
+            propertyId: prop._id,
+            tenantId: userId,
+          });
 
           if (response.status === 201) {
             Swal.fire({
@@ -437,11 +435,14 @@ const Home = () => {
     });
   };
 
-  const filteredProperties = properties.filter(
-    (prop) =>
-      prop.propertyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      prop.location?.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  // Memoize filtered properties for performance
+  const filteredProperties = useMemo(() => {
+    return properties.filter(
+      (prop) =>
+        prop.propertyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        prop.location?.toLowerCase().includes(searchTerm.toLowerCase()),
+    );
+  }, [properties, searchTerm]);
 
   return (
     <div style={{ backgroundColor: "#f4f7fa", minHeight: "100vh" }}>
@@ -461,13 +462,13 @@ const Home = () => {
             <>
               <button
                 className="nav-btn login-btn"
-                onClick={() => navigate("/page")}
+                onClick={() => navigate("/signup")}
               >
                 Login
               </button>
               <button
                 className="nav-btn signup-btn"
-                onClick={() => navigate("/page")}
+                onClick={() => navigate("/signup")}
               >
                 Sign Up
               </button>
