@@ -76,7 +76,7 @@ const LandingPage = () => {
                 placeholder="Enter Access Key"
                 value={accessKey}
                 onChange={(e) => setAccessKey(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && verifyPageAccess()}
+                onKeyDown={(e) => e.key === "Enter" && verifyPageAccess()}
                 className="w-full px-5 py-4 bg-white/5 border-2 border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/20 transition-all mb-5"
               />
 

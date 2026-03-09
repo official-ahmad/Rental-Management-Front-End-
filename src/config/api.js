@@ -1,16 +1,38 @@
 // ============================================
-// API Configuration - Switch Between Local & Live
+// API Configuration — auto-detects environment
 // ============================================
 
-// 🔁 Toggle this to switch between LOCAL and LIVE
-const USE_LOCAL = false; // true = localhost, false = live server
+// In development: create .env with VITE_API_URL=http://localhost:8000
+// In production (Vercel): set VITE_API_URL in environment variables
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://rental-management-back-end.onrender.com";
 
-// URLs
-const LOCAL_URL = "http://localhost:8000";
-const LIVE_URL = "https://rental-management-back-end.onrender.com";
+export { API_BASE_URL };
 
-// Active Base URL
-export const API_BASE_URL = USE_LOCAL ? LOCAL_URL : LIVE_URL;
+// Axios instance with automatic auth headers
+import axios from "axios";
+
+export const apiClient = axios.create({ baseURL: API_BASE_URL });
+
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.clear();
+      window.location.href = "/login";
+    }
+    return Promise.reject(error);
+  },
+);
 
 // API Endpoints
 export const API = {

@@ -462,7 +462,7 @@ const Home = () => {
             <>
               <button
                 className="nav-btn login-btn"
-                onClick={() => navigate("/signup")}
+                onClick={() => navigate("/login")}
               >
                 Login
               </button>

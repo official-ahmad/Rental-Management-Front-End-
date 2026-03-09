@@ -3,185 +3,7 @@ import axios from "axios";
 import { Toaster, toast } from "react-hot-toast";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import {
-  MDBContainer,
-  MDBCard,
-  MDBCardBody,
-  MDBInput,
-  MDBRow,
-  MDBCol,
-} from "mdb-react-ui-kit";
-import styled from "styled-components";
 import { API } from "../config/api";
-
-// Reusable Button Component (from your top code, now integrated)
-const Button = ({ onClick, children }) => {
-  return (
-    <StyledWrapper>
-      <button onClick={onClick}>
-        {children}
-        <div className="arrow-wrapper">
-          <div className="arrow" />
-        </div>
-      </button>
-    </StyledWrapper>
-  );
-};
-
-const StyledWrapper = styled.div`
-  button {
-    --primary-color: #645bff;
-    --secondary-color: #fff;
-    --hover-color: #111;
-    --arrow-width: 10px;
-    --arrow-stroke: 2px;
-    box-sizing: border-box;
-    border: 0;
-    border-radius: 20px;
-    color: var(--secondary-color);
-    padding: 1em 1.8em;
-    background: var(--primary-color);
-    display: flex;
-    transition: 0.2s background;
-    align-items: center;
-    gap: 0.6em;
-    font-weight: bold;
-    cursor: pointer;
-    width: 100%; /* Full width */
-    justify-content: center; /* Center the content inside */
-  }
-
-  button .arrow-wrapper {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
-  button .arrow {
-    margin-top: 1px;
-    width: var(--arrow-width);
-    background: var(--primary-color);
-    height: var(--arrow-stroke);
-    position: relative;
-    transition: 0.2s;
-  }
-
-  button .arrow::before {
-    content: "";
-    box-sizing: border-box;
-    position: absolute;
-    border: solid var(--secondary-color);
-    border-width: 0 var(--arrow-stroke) var(--arrow-stroke) 0;
-    display: inline-block;
-    top: -3px;
-    right: 3px;
-    transition: 0.2s;
-    padding: 3px;
-    transform: rotate(-45deg);
-  }
-
-  button:hover {
-    background-color: var(--hover-color);
-  }
-
-  button:hover .arrow {
-    background: var(--secondary-color);
-  }
-
-  button:hover .arrow:before {
-    right: 0;
-  }
-`;
-
-// Updated Checkbox Component (made reusable with props)
-const Checkbox = ({ checked, onChange, label }) => {
-  return (
-    <StyledCheckboxWrapper>
-      <label className="checkbox-container">
-        <input
-          className="custom-checkbox"
-          type="checkbox"
-          checked={checked}
-          onChange={onChange}
-        />
-        <span className="checkmark" />
-        {label && <span className="checkbox-label">{label}</span>}
-      </label>
-    </StyledCheckboxWrapper>
-  );
-};
-
-const StyledCheckboxWrapper = styled.div`
-  .checkbox-container {
-    display: inline-block;
-    position: relative;
-    padding-left: 35px;
-    margin-bottom: 12px;
-    cursor: pointer;
-    font-size: 16px;
-    user-select: none;
-  }
-
-  .custom-checkbox {
-    position: absolute;
-    opacity: 0;
-    cursor: pointer;
-    height: 0;
-    width: 0;
-  }
-
-  .checkmark {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 25px;
-    width: 25px;
-    background-color: #eee;
-    border-radius: 4px;
-    transition: background-color 0.3s;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  }
-
-  .checkmark:after {
-    content: "";
-    position: absolute;
-    display: none;
-    left: 9px;
-    top: 5px;
-    width: 5px;
-    height: 10px;
-    border: solid white;
-    border-width: 0 3px 3px 0;
-    transform: rotate(45deg);
-  }
-
-  .custom-checkbox:checked ~ .checkmark {
-    background-color: #2196f3;
-    box-shadow: 0 3px 7px rgba(33, 150, 243, 0.3);
-  }
-
-  .custom-checkbox:checked ~ .checkmark:after {
-    display: block;
-  }
-
-  @keyframes checkAnim {
-    0% {
-      height: 0;
-    }
-    100% {
-      height: 10px;
-    }
-  }
-
-  .custom-checkbox:checked ~ .checkmark:after {
-    animation: checkAnim 0.2s forwards;
-  }
-
-  .checkbox-label {
-    margin-left: 10px;
-    color: #333;
-  }
-`;
 
 const Signup = () => {
   const location = useLocation();
@@ -189,6 +11,7 @@ const Signup = () => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -204,235 +27,242 @@ const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!acceptTerms) {
-      toast.error("Please Fill the Input Fields!");
+      toast.error("Please accept the Terms and Conditions.");
       return;
     }
+    setLoading(true);
     try {
-      const response = await axios.post(API.AUTH.REGISTER, formData);
-      console.log(response.data);
-      toast.success("Signup successful!");
+      await axios.post(API.AUTH.REGISTER, formData);
+      toast.success("Account created successfully!");
       setTimeout(() => navigate("/login"), 2000);
     } catch (error) {
-      console.error(error);
       toast.error(
         error.response?.data?.message || "Signup failed. Please try again.",
       );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div
-      style={{
-        background: "#e3f2fd",
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "20px",
-      }}
-    >
-      <Toaster />
-      <MDBContainer fluid className="p-0">
-        <MDBRow className="g-0">
-          <MDBCol
-            md="6"
-            className="d-none d-md-flex align-items-center justify-content-center"
-          >
-            <div
-              style={{
-                backgroundImage:
-                  "url('https://www.gofivestarpm.com/images/blog/rental%20property%20inspections.jpg')",
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                height: "100vh",
-                width: "100%",
-                borderRadius: "20px 0 0 20px",
-                boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
-              }}
-            ></div>
-          </MDBCol>
-          <MDBCol
-            md="6"
-            className="d-flex align-items-center justify-content-center"
-          >
-            <MDBCard
-              className="shadow-lg"
-              style={{
-                borderRadius: "20px",
-                maxWidth: "450px",
-                width: "100%",
-                background: "rgba(255, 255, 255, 0.95)",
-                backdropFilter: "blur(10px)",
-                border: "none",
-              }}
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 relative overflow-hidden">
+      <Toaster position="top-center" />
+
+      {/* Decorative Orbs */}
+      <div className="absolute top-10 -right-20 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl" />
+      <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-indigo-500/15 rounded-full blur-3xl" />
+
+      <div className="w-full max-w-md mx-4 relative z-10 py-8">
+        {/* Branding */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30 mb-4">
+            <svg
+              className="w-7 h-7 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
             >
-              <MDBCardBody className="p-5">
-                <div className="text-center mb-5">
-                  <h2 className="fw-bold text-dark mb-2">Sign Up Now</h2>
-                  <p className="text-muted">Create your account</p>
-                </div>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+              />
+            </svg>
+          </div>
+          <h1 className="text-3xl font-bold text-white tracking-tight">
+            Create Account
+          </h1>
+          <p className="text-slate-400 mt-2">
+            Join the rental management platform
+          </p>
+        </div>
 
-                <form onSubmit={handleSubmit}>
-                  <MDBRow>
-                    <MDBCol col="6">
-                      <MDBInput
-                        wrapperClass="mb-4"
-                        label="First name"
-                        name="firstName"
-                        type="text"
-                        value={formData.firstName}
-                        onChange={handleChange}
-                        required
-                        aria-label="First name"
-                        style={{
-                          borderRadius: "10px",
-                          border: "1px solid #ddd",
-                          padding: "12px 15px",
-                        }}
-                      />
-                    </MDBCol>
-                    <MDBCol col="6">
-                      <MDBInput
-                        wrapperClass="mb-4"
-                        label="Last name"
-                        name="lastName"
-                        type="text"
-                        value={formData.lastName}
-                        onChange={handleChange}
-                        required
-                        aria-label="Last name"
-                        style={{
-                          borderRadius: "10px",
-                          border: "1px solid #ddd",
-                          padding: "12px 15px",
-                        }}
-                      />
-                    </MDBCol>
-                  </MDBRow>
+        {/* Card */}
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Name Row */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                  First Name
+                </label>
+                <input
+                  type="text"
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  required
+                  placeholder="John"
+                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                  Last Name
+                </label>
+                <input
+                  type="text"
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  required
+                  placeholder="Doe"
+                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                />
+              </div>
+            </div>
 
-                  <MDBInput
-                    wrapperClass="mb-4"
-                    label="Email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    aria-label="Email"
-                    style={{
-                      borderRadius: "10px",
-                      border: "1px solid #ddd",
-                      padding: "12px 15px",
-                    }}
-                  />
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                Email Address
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                placeholder="you@example.com"
+                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+              />
+            </div>
 
-                  <div style={{ position: "relative", marginBottom: "1.5rem" }}>
-                    <MDBInput
-                      wrapperClass="mb-0"
-                      label="Password"
-                      name="password"
-                      type={showPassword ? "text" : "password"}
-                      value={formData.password}
-                      onChange={handleChange}
-                      required
-                      aria-label="Password"
-                      style={{
-                        borderRadius: "10px",
-                        border: "1px solid #ddd",
-                        padding: "12px 45px 12px 15px",
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      style={{
-                        position: "absolute",
-                        right: "15px",
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        color: "#666",
-                        transition: "color 0.3s",
-                      }}
-                      onMouseEnter={(e) => (e.target.style.color = "#333")}
-                      onMouseLeave={(e) => (e.target.style.color = "#666")}
-                      aria-label={
-                        showPassword ? "Hide password" : "Show password"
-                      }
+            {/* Password */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  minLength={8}
+                  placeholder="Min. 8 characters"
+                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all pr-12"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
+              </div>
+            </div>
+
+            {/* Role */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                Register As
+              </label>
+              <select
+                name="role"
+                value={formData.role}
+                onChange={handleChange}
+                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all appearance-none cursor-pointer"
+              >
+                <option value="Tenant" className="bg-slate-800">
+                  Tenant
+                </option>
+                <option value="Manager" className="bg-slate-800">
+                  Manager
+                </option>
+              </select>
+            </div>
+
+            {/* Terms */}
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <div className="relative mt-0.5">
+                <input
+                  type="checkbox"
+                  checked={acceptTerms}
+                  onChange={(e) => setAcceptTerms(e.target.checked)}
+                  className="peer sr-only"
+                />
+                <div className="w-5 h-5 rounded-md border-2 border-white/20 bg-white/5 peer-checked:bg-indigo-500 peer-checked:border-indigo-500 transition-all flex items-center justify-center">
+                  {acceptTerms && (
+                    <svg
+                      className="w-3 h-3 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={3}
                     >
-                      {showPassword ? (
-                        <FaEyeSlash size={20} />
-                      ) : (
-                        <FaEye size={20} />
-                      )}
-                    </button>
-                  </div>
-
-                  <select
-                    className="form-select mb-4"
-                    name="role"
-                    value={formData.role}
-                    onChange={handleChange}
-                    aria-label="Select role"
-                    style={{
-                      borderRadius: "10px",
-                      border: "1px solid #ddd",
-                      padding: "12px 15px",
-                    }}
-                  >
-                    <option value="Tenant">Tenant</option>
-                    <option value="Manager">Manager</option>
-                  </select>
-
-                  {/* Replaced the old checkbox with the custom Checkbox component */}
-                  <div style={{ marginBottom: "1.5rem" }}>
-                    <Checkbox
-                      checked={acceptTerms}
-                      onChange={(e) => setAcceptTerms(e.target.checked)}
-                      label={
-                        <>
-                          I accept the{" "}
-                          <a
-                            href="#"
-                            style={{
-                              color: "#1976d2",
-                              textDecoration: "underline",
-                            }}
-                            onClick={(e) => e.preventDefault()}
-                          >
-                            Terms and Conditions
-                          </a>
-                        </>
-                      }
-                    />
-                  </div>
-
-                  <Button onClick={handleSubmit}>Sign up</Button>
-                </form>
-
-                <div className="text-center">
-                  <p className="text-muted mb-0">
-                    Already have an account?{" "}
-                    <span
-                      style={{
-                        color: "#1976d2",
-                        cursor: "pointer",
-                        fontWeight: "bold",
-                        textDecoration: "underline",
-                      }}
-                      onClick={() => navigate("/login")}
-                    >
-                      Login
-                    </span>
-                  </p>
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  )}
                 </div>
-              </MDBCardBody>
-            </MDBCard>
-          </MDBCol>
-        </MDBRow>
-      </MDBContainer>
+              </div>
+              <span className="text-sm text-slate-400 group-hover:text-slate-300 transition-colors">
+                I accept the{" "}
+                <span className="text-indigo-400 hover:text-indigo-300 underline">
+                  Terms and Conditions
+                </span>
+              </span>
+            </label>
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 mt-2"
+            >
+              {loading ? (
+                <span className="inline-flex items-center gap-2">
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      fill="none"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                    />
+                  </svg>
+                  Creating account...
+                </span>
+              ) : (
+                "Create Account"
+              )}
+            </button>
+          </form>
+
+          {/* Divider */}
+          <div className="flex items-center gap-4 my-6">
+            <div className="flex-1 h-px bg-white/10" />
+            <span className="text-xs text-slate-500 uppercase tracking-wider">
+              or
+            </span>
+            <div className="flex-1 h-px bg-white/10" />
+          </div>
+
+          {/* Bottom Link */}
+          <p className="text-center text-slate-400 text-sm">
+            Already have an account?{" "}
+            <span
+              onClick={() => navigate("/login")}
+              className="text-indigo-400 hover:text-indigo-300 font-semibold cursor-pointer transition-colors"
+            >
+              Sign In
+            </span>
+          </p>
+        </div>
+      </div>
     </div>
   );
 };

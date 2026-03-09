@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast, Toaster } from "react-hot-toast";
-import axios from "axios";
 import Swal from "sweetalert2";
 import {
   FaBuilding,
@@ -35,19 +34,8 @@ import {
   MDBModalBody,
   MDBInput,
 } from "mdb-react-ui-kit";
-import { API } from "../src/config/api";
-
-const formatDate = (dateValue) => {
-  if (!dateValue) return "—";
-  const date = new Date(dateValue);
-  if (isNaN(date.getTime())) return "—";
-
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-};
+import { API, apiClient } from "../src/config/api";
+import { getDisplayName, formatDate } from "../src/utils/helpers";
 
 const ManagerDashboard = () => {
   const navigate = useNavigate();
@@ -85,8 +73,8 @@ const ManagerDashboard = () => {
   const fetchData = useCallback(async () => {
     try {
       const [propRes, bookRes] = await Promise.all([
-        axios.get(`${API_BASE}/properties`),
-        axios.get(API.BOOKINGS.ALL_REQUESTS),
+        apiClient.get(`${API_BASE}/properties`),
+        apiClient.get(API.BOOKINGS.ALL_REQUESTS),
       ]);
       setProperties(propRes.data || []);
       const allBookings = bookRes.data || [];
@@ -142,11 +130,11 @@ const ManagerDashboard = () => {
         };
 
         if (isEdit) {
-          await axios.put(`${API_BASE}/update/${formData._id}`, finalData);
+          await apiClient.put(`${API_BASE}/update/${formData._id}`, finalData);
           toast.success("Property Updated!");
         } else {
           const { _id, ...newPropertyData } = finalData;
-          await axios.post(`${API_BASE}/add`, newPropertyData);
+          await apiClient.post(`${API_BASE}/add`, newPropertyData);
           toast.success("Property Added Successfully!");
         }
         setModalOpen(false);
@@ -170,7 +158,7 @@ const ManagerDashboard = () => {
       }).then(async (result) => {
         if (result.isConfirmed) {
           try {
-            await axios.delete(`${API_BASE}/delete/${id}`);
+            await apiClient.delete(`${API_BASE}/delete/${id}`);
             toast.success("Property deleted successfully");
             fetchData();
           } catch {
@@ -185,7 +173,9 @@ const ManagerDashboard = () => {
   const handleStatusUpdate = useCallback(
     async (bookingId, newStatus) => {
       try {
-        await axios.put(API.BOOKINGS.UPDATE(bookingId), { status: newStatus });
+        await apiClient.put(API.BOOKINGS.UPDATE(bookingId), {
+          status: newStatus,
+        });
         toast.success(`Booking ${newStatus}!`);
         fetchData();
       } catch {
@@ -224,13 +214,13 @@ const ManagerDashboard = () => {
     if (activeTab === "requests") {
       return requests.filter(
         (r) =>
-          r.tenantId?.name?.toLowerCase().includes(term) ||
+          getDisplayName(r.tenantId).toLowerCase().includes(term) ||
           r.propertyId?.propertyName?.toLowerCase().includes(term),
       );
     }
     return activeTenants.filter(
       (t) =>
-        t.tenantId?.name?.toLowerCase().includes(term) ||
+        getDisplayName(t.tenantId).toLowerCase().includes(term) ||
         t.propertyId?.propertyName?.toLowerCase().includes(term),
     );
   }, [activeTab, searchTerm, properties, requests, activeTenants]);
@@ -523,7 +513,7 @@ const ManagerDashboard = () => {
                         <>
                           <td className="ps-4 py-4">
                             <div className="fw-bold text-dark">
-                              {item.tenantId?.name}
+                              {getDisplayName(item.tenantId)}
                             </div>
                             <div className="text-muted small">
                               {item.tenantId?.email}
@@ -564,7 +554,7 @@ const ManagerDashboard = () => {
                         <>
                           <td className="ps-4 py-4">
                             <div className="fw-bold text-dark">
-                              {item.tenantId?.name}
+                              {getDisplayName(item.tenantId)}
                             </div>
                             <div className="text-muted small">
                               {item.tenantId?.email}

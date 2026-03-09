@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
-import axios from "axios";
 import {
   FaHome,
   FaFileInvoiceDollar,
@@ -42,7 +41,7 @@ import {
   MDBBadge,
 } from "mdb-react-ui-kit";
 import Swal from "sweetalert2";
-import { API } from "../src/config/api";
+import { API, apiClient } from "../src/config/api";
 
 const buttonStyle = {
   borderRadius: "25px",
@@ -77,7 +76,7 @@ const TenantDashboard = () => {
       return;
     }
     try {
-      const res = await axios.get(API.BOOKINGS.MY_BOOKING(userId));
+      const res = await apiClient.get(API.BOOKINGS.MY_BOOKING(userId));
       setBookings(res.data);
     } catch (err) {
       console.error("Fetch Error:", err.message);
@@ -108,7 +107,7 @@ const TenantDashboard = () => {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const res = await axios.put(API.BOOKINGS.PAY(bookingId));
+          const res = await apiClient.put(API.BOOKINGS.PAY(bookingId));
 
           if (res.status === 200) {
             const newBalance = walletBalance - amount;
@@ -142,7 +141,7 @@ const TenantDashboard = () => {
   const handleCancelBooking = async (bookingId) => {
     Swal.fire({
       title: "Confirm Cancellation",
-      text: "Are you sure you want to cancel this request? Ye wapis nahi ayegi!",
+      text: "Are you sure you want to cancel this request? This action cannot be undone.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#d33",
@@ -153,7 +152,7 @@ const TenantDashboard = () => {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const res = await axios.delete(API.BOOKINGS.CANCEL(bookingId));
+          const res = await apiClient.delete(API.BOOKINGS.CANCEL(bookingId));
           if (res.status === 200) {
             toast.success("Request cancelled successfully!");
             fetchTenantData();
@@ -184,9 +183,8 @@ const TenantDashboard = () => {
       const payload = {
         propertyId: selectedProp._id,
         tenantId: userId,
-        managerId: selectedProp.managerId || "6784d8583be59d1b64010915",
       };
-      const res = await axios.post(API.BOOKINGS.REQUEST, payload);
+      const res = await apiClient.post(API.BOOKINGS.REQUEST, payload);
       if (res.status === 201 || res.status === 200) {
         toast.success("Request sent successfully!");
         localStorage.removeItem("selectedProperty");
@@ -201,7 +199,7 @@ const TenantDashboard = () => {
   const latestBooking = bookings.length > 0 ? bookings[0] : null;
   const confirmLogout = () => {
     localStorage.clear();
-    navigate("/page");
+    navigate("/");
   };
 
   if (loading) {
@@ -510,7 +508,7 @@ const TenantDashboard = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="6" className="text-center py-5 text-muted">
+                    <td colSpan="5" className="text-center py-5 text-muted">
                       No booking history found.
                     </td>
                   </tr>

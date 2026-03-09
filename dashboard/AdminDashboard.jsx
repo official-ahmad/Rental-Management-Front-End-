@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast, Toaster } from "react-hot-toast";
-import axios from "axios";
 import Swal from "sweetalert2";
 import {
   FaUsers,
@@ -38,7 +37,8 @@ import {
   MDBModalBody,
   MDBModalFooter,
 } from "mdb-react-ui-kit";
-import { API } from "../src/config/api";
+import { API, apiClient } from "../src/config/api";
+import { getDisplayName } from "../src/utils/helpers";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -81,12 +81,10 @@ const AdminDashboard = () => {
   const fetchAllData = useCallback(async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const config = { headers: { Authorization: `Bearer ${token}` } };
 
       const [propRes, userRes] = await Promise.all([
-        axios.get(`${API_BASE}/properties`, config),
-        axios.get(`${API_BASE}/users`, config),
+        apiClient.get(`${API_BASE}/properties`),
+        apiClient.get(`${API_BASE}/users`),
       ]);
 
       setProperties(propRes.data || []);
@@ -104,7 +102,7 @@ const AdminDashboard = () => {
       if (managerList.length > 0 && !formData.managerId) {
         setFormData((prev) => ({ ...prev, managerId: managerList[0]._id }));
       }
-    } catch (err) {
+    } catch {
       toast.error("Database sync failed! Check your connection.");
     } finally {
       setLoading(false);
@@ -140,9 +138,6 @@ const AdminDashboard = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem("token");
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-
     const payload = {
       ...formData,
       name: formData.propertyName,
@@ -154,10 +149,10 @@ const AdminDashboard = () => {
 
     try {
       if (editMode) {
-        await axios.put(`${API_BASE}/update/${selectedId}`, payload, config);
+        await apiClient.put(`${API_BASE}/update/${selectedId}`, payload);
         toast.success("Property Updated Successfully!");
       } else {
-        await axios.post(`${API_BASE}/add`, payload, config);
+        await apiClient.post(`${API_BASE}/add`, payload);
         toast.success("New Property Added!");
       }
       setModalOpen(false);
@@ -179,13 +174,10 @@ const AdminDashboard = () => {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const token = localStorage.getItem("token");
-          await axios.delete(`${API_BASE}/delete/${id}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+          await apiClient.delete(`${API_BASE}/delete/${id}`);
           toast.success("Property Deleted!");
           fetchAllData();
-        } catch (err) {
+        } catch {
           toast.error("Delete operation failed");
         }
       }
@@ -231,7 +223,9 @@ const AdminDashboard = () => {
     const query = searchQuery.toLowerCase();
     return data.filter(
       (item) =>
-        (item.name || item.propertyName || "").toLowerCase().includes(query) ||
+        (getDisplayName(item) || item.propertyName || "")
+          .toLowerCase()
+          .includes(query) ||
         (item.location || "").toLowerCase().includes(query) ||
         (item.email || "").toLowerCase().includes(query),
     );
@@ -506,9 +500,12 @@ const AdminDashboard = () => {
                           </td>
                           <td>
                             <MDBBadge pill color="info" light className="px-2">
-                              {managers.find(
-                                (m) => m._id === (item.owner || item.managerId),
-                              )?.name || "System Admin"}
+                              {getDisplayName(
+                                managers.find(
+                                  (m) =>
+                                    m._id === (item.owner || item.managerId),
+                                ),
+                              ) || "System Admin"}
                             </MDBBadge>
                           </td>
                           <td>
@@ -530,7 +527,9 @@ const AdminDashboard = () => {
                           <td>
                             <MDBBadge
                               color={
-                                item.role === "manager" ? "primary" : "info"
+                                item.role?.toLowerCase() === "manager"
+                                  ? "primary"
+                                  : "info"
                               }
                               light
                               className="text-uppercase"
@@ -643,7 +642,7 @@ const AdminDashboard = () => {
                       <option value="">Choose Manager...</option>
                       {managers.map((m) => (
                         <option key={m._id} value={m._id}>
-                          {m.name || m.email}
+                          {getDisplayName(m) || m.email}
                         </option>
                       ))}
                     </select>

@@ -21,12 +21,12 @@ const ForgotPassword = () => {
 
     setTimeout(() => {
       setLoading(false);
-      toast.success("Demo: Reset link sent to " + email, {
+      toast.success("Reset request recorded for " + email, {
         duration: 4000,
         style: { borderRadius: "10px", background: "#333", color: "#fff" },
       });
 
-      setTimeout(() => navigate("/page"), 3000);
+      setTimeout(() => navigate("/login"), 3000);
     }, 2000);
   };
 
@@ -57,8 +57,8 @@ const ForgotPassword = () => {
 
               <h3 className="fw-bold text-dark mb-2">Forgot Password?</h3>
               <p className="text-muted mb-4 px-3">
-                No worries! Enter your email below and we will send you
-                instructions to reset your password.
+                Enter your email below to submit a reset request and return to
+                the login screen.
               </p>
 
               <form onSubmit={handleSubmit}>
@@ -90,7 +90,7 @@ const ForgotPassword = () => {
 
               <div className="mt-4">
                 <button
-                  onClick={() => navigate("/page")}
+                  onClick={() => navigate("/login")}
                   className="btn btn-link text-decoration-none text-primary fw-bold"
                 >
                   Back to Login
