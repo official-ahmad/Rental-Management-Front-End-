@@ -2,7 +2,15 @@ import React, { useState } from "react";
 import axios from "axios";
 import { Toaster, toast } from "react-hot-toast";
 import { useNavigate, useLocation } from "react-router-dom";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  User,
+  ChevronDown,
+  Building2,
+} from "lucide-react";
 import { API } from "../config/api";
 
 const Signup = () => {
@@ -45,96 +53,159 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 relative overflow-hidden">
+    <div className="min-h-screen flex bg-[#f0f4f8]">
       <Toaster position="top-center" />
 
-      {/* Decorative Orbs */}
-      <div className="absolute top-10 -right-20 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl" />
-      <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-indigo-500/15 rounded-full blur-3xl" />
+      {/* Left Panel — Branding */}
+      <div className="hidden lg:flex lg:w-[45%] bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] relative overflow-hidden flex-col justify-between p-12">
+        {/* Decorative shapes */}
+        <div className="absolute top-0 right-0 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl -translate-x-1/3 translate-y-1/3" />
+        <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-teal-400/5 rounded-full blur-2xl -translate-x-1/2 -translate-y-1/2" />
 
-      <div className="w-full max-w-md mx-4 relative z-10 py-8">
-        {/* Branding */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30 mb-4">
-            <svg
-              className="w-7 h-7 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-              />
-            </svg>
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center">
+              <Building2 className="w-5 h-5 text-white" />
+            </div>
+            <span className="text-white font-bold text-xl tracking-tight">
+              RentManager
+            </span>
           </div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">
-            Create Account
-          </h1>
-          <p className="text-slate-400 mt-2">
-            Join the rental management platform
-          </p>
         </div>
 
-        {/* Card */}
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl">
+        <div className="relative z-10 space-y-6">
+          <h2 className="text-4xl font-extrabold text-white leading-tight">
+            Start managing <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
+              rentals today
+            </span>
+          </h2>
+          <p className="text-slate-400 text-lg leading-relaxed max-w-sm">
+            Create your free account and take control of your rental properties
+            in minutes.
+          </p>
+
+          <div className="space-y-4 pt-4">
+            {[
+              "Manage tenants & bookings effortlessly",
+              "Real-time dashboard & analytics",
+              "Secure & reliable platform",
+            ].map((text, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                  <svg
+                    className="w-3.5 h-3.5 text-emerald-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={3}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+                <span className="text-slate-300 text-sm">{text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="relative z-10">
+          <p className="text-slate-600 text-xs">
+            &copy; 2026 RentManager. All rights reserved.
+          </p>
+        </div>
+      </div>
+
+      {/* Right Panel — Form */}
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-10">
+        <div className="w-full max-w-[420px] animate-[fadeSlideUp_0.5s_ease]">
+          {/* Mobile logo */}
+          <div className="flex items-center gap-2 mb-10 lg:hidden">
+            <div className="w-9 h-9 bg-emerald-500 rounded-lg flex items-center justify-center">
+              <Building2 className="w-4 h-4 text-white" />
+            </div>
+            <span className="font-bold text-lg text-slate-800">
+              RentManager
+            </span>
+          </div>
+
+          <h1 className="text-3xl font-extrabold text-slate-900 mb-1">
+            Create account
+          </h1>
+          <p className="text-slate-500 mb-8">
+            Join the rental management platform
+          </p>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Name Row */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                   First Name
                 </label>
-                <input
-                  type="text"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  required
-                  placeholder="John"
-                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                />
+                <div className="relative">
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    required
+                    placeholder="John"
+                    className="w-full pl-11 pr-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all shadow-sm"
+                  />
+                </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                   Last Name
                 </label>
-                <input
-                  type="text"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  required
-                  placeholder="Doe"
-                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                />
+                <div className="relative">
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    required
+                    placeholder="Doe"
+                    className="w-full pl-11 pr-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all shadow-sm"
+                  />
+                </div>
               </div>
             </div>
 
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                Email Address
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                Email
               </label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                placeholder="you@example.com"
-                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-              />
+              <div className="relative">
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  placeholder="you@example.com"
+                  className="w-full pl-11 pr-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all shadow-sm"
+                />
+              </div>
             </div>
 
             {/* Password */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                 Password
               </label>
               <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                   type={showPassword ? "text" : "password"}
                   name="password"
@@ -143,40 +214,43 @@ const Signup = () => {
                   required
                   minLength={8}
                   placeholder="Min. 8 characters"
-                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all pr-12"
+                  className="w-full pl-11 pr-12 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all shadow-sm"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                 >
-                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
                 </button>
               </div>
             </div>
 
             {/* Role */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                 Register As
               </label>
-              <select
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all appearance-none cursor-pointer"
-              >
-                <option value="Tenant" className="bg-slate-800">
-                  Tenant
-                </option>
-                <option value="Manager" className="bg-slate-800">
-                  Manager
-                </option>
-              </select>
+              <div className="relative">
+                <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                <select
+                  name="role"
+                  value={formData.role}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all appearance-none cursor-pointer shadow-sm"
+                >
+                  <option value="Tenant">Tenant</option>
+                  <option value="Manager">Manager</option>
+                </select>
+              </div>
             </div>
 
             {/* Terms */}
-            <label className="flex items-start gap-3 cursor-pointer group">
+            <label className="flex items-start gap-3 cursor-pointer group pt-1">
               <div className="relative mt-0.5">
                 <input
                   type="checkbox"
@@ -184,7 +258,7 @@ const Signup = () => {
                   onChange={(e) => setAcceptTerms(e.target.checked)}
                   className="peer sr-only"
                 />
-                <div className="w-5 h-5 rounded-md border-2 border-white/20 bg-white/5 peer-checked:bg-indigo-500 peer-checked:border-indigo-500 transition-all flex items-center justify-center">
+                <div className="w-5 h-5 rounded-md border-2 border-slate-300 bg-white peer-checked:bg-emerald-500 peer-checked:border-emerald-500 transition-all flex items-center justify-center">
                   {acceptTerms && (
                     <svg
                       className="w-3 h-3 text-white"
@@ -202,9 +276,9 @@ const Signup = () => {
                   )}
                 </div>
               </div>
-              <span className="text-sm text-slate-400 group-hover:text-slate-300 transition-colors">
+              <span className="text-sm text-slate-500 group-hover:text-slate-700 transition-colors">
                 I accept the{" "}
-                <span className="text-indigo-400 hover:text-indigo-300 underline">
+                <span className="text-emerald-600 hover:text-emerald-700 underline font-medium">
                   Terms and Conditions
                 </span>
               </span>
@@ -214,7 +288,7 @@ const Signup = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 mt-2"
+              className="w-full py-3.5 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-600/20 hover:shadow-emerald-600/30 mt-1"
             >
               {loading ? (
                 <span className="inline-flex items-center gap-2">
@@ -243,26 +317,30 @@ const Signup = () => {
           </form>
 
           {/* Divider */}
-          <div className="flex items-center gap-4 my-6">
-            <div className="flex-1 h-px bg-white/10" />
-            <span className="text-xs text-slate-500 uppercase tracking-wider">
+          <div className="flex items-center gap-4 my-7">
+            <div className="flex-1 h-px bg-slate-200" />
+            <span className="text-xs text-slate-400 uppercase tracking-wider font-medium">
               or
             </span>
-            <div className="flex-1 h-px bg-white/10" />
+            <div className="flex-1 h-px bg-slate-200" />
           </div>
 
           {/* Bottom Link */}
-          <p className="text-center text-slate-400 text-sm">
+          <p className="text-center text-slate-500 text-sm">
             Already have an account?{" "}
             <span
               onClick={() => navigate("/login")}
-              className="text-indigo-400 hover:text-indigo-300 font-semibold cursor-pointer transition-colors"
+              className="text-emerald-600 hover:text-emerald-700 font-semibold cursor-pointer transition-colors"
             >
               Sign In
             </span>
           </p>
         </div>
       </div>
+
+      <style>{`
+        @keyframes fadeSlideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+      `}</style>
     </div>
   );
 };
