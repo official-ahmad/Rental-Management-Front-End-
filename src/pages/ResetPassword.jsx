@@ -1,62 +1,44 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { toast, Toaster } from "react-hot-toast";
-import { useNavigate, useLocation } from "react-router-dom";
-import {
-  Mail,
-  KeyRound,
-  ChevronDown,
-  Building2,
-  ArrowLeft,
-  ShieldX,
-} from "lucide-react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Lock, Eye, EyeOff, Building2, ShieldCheck } from "lucide-react";
 import { API_BASE_URL } from "../config/api";
-import Swal from "sweetalert2";
 
-const ForgotPassword = () => {
-  const location = useLocation();
+const ResetPassword = () => {
+  const { token } = useParams();
+  const [searchParams] = useSearchParams();
+  const role = searchParams.get("role") || "Tenant";
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState(location.state?.selectedRole || "Tenant");
+
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (role === "Admin") {
-      await Swal.fire({
-        icon: "error",
-        title: "Access Denied",
-        text: "Password cannot be reset. Contact Developer to access it.",
-        confirmButtonColor: "#059669",
-        confirmButtonText: "OK",
-      });
-      navigate("/login");
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    if (password.length < 8) {
+      toast.error("Password must be at least 8 characters");
       return;
     }
 
     setLoading(true);
     try {
-      const res = await axios.post(`${API_BASE_URL}/api/auth/forgot-password`, {
-        email,
-        role,
-      });
+      const res = await axios.post(
+        `${API_BASE_URL}/api/auth/reset-password/${token}`,
+        { password, role },
+      );
       toast.success(res.data.message);
-      setTimeout(() => navigate("/login"), 3000);
+      setTimeout(() => navigate("/login"), 2000);
     } catch (error) {
-      const msg = error.response?.data?.message || "Something went wrong";
-      if (error.response?.status === 403) {
-        await Swal.fire({
-          icon: "error",
-          title: "Access Denied",
-          text: msg,
-          confirmButtonColor: "#059669",
-          confirmButtonText: "OK",
-        });
-        navigate("/login");
-      } else {
-        toast.error(msg);
-      }
+      toast.error(error.response?.data?.message || "Reset failed");
     } finally {
       setLoading(false);
     }
@@ -84,14 +66,13 @@ const ForgotPassword = () => {
 
         <div className="relative z-10 space-y-6">
           <h2 className="text-4xl font-extrabold text-white leading-tight">
-            Forgot your <br />
+            Set your new <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
-              password?
+              password
             </span>
           </h2>
           <p className="text-slate-400 text-lg leading-relaxed max-w-sm">
-            No worries — we'll send a reset link to your email so you can get
-            back in quickly.
+            Choose a strong password to keep your account secure.
           </p>
         </div>
 
@@ -116,49 +97,62 @@ const ForgotPassword = () => {
           </div>
 
           <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mb-6">
-            <KeyRound className="w-7 h-7 text-emerald-600" />
+            <ShieldCheck className="w-7 h-7 text-emerald-600" />
           </div>
 
           <h1 className="text-3xl font-extrabold text-slate-900 mb-1">
-            Reset Password
+            New Password
           </h1>
           <p className="text-slate-500 mb-8">
-            Enter your email and we'll send you a reset link
+            Resetting password for{" "}
+            <span className="font-semibold text-slate-700">{role}</span> account
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Role */}
+            {/* New Password */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                Account Type
+                New Password
               </label>
               <div className="relative">
-                <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all appearance-none cursor-pointer shadow-sm"
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={8}
+                  placeholder="Min. 8 characters"
+                  className="w-full pl-11 pr-12 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all shadow-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                 >
-                  <option value="Tenant">Tenant</option>
-                  <option value="Manager">Manager</option>
-                  <option value="Admin">Admin</option>
-                </select>
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
               </div>
             </div>
 
-            {/* Email */}
+            {/* Confirm Password */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                Email Address
+                Confirm Password
               </label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  placeholder="you@example.com"
+                  minLength={8}
+                  placeholder="Re-enter password"
                   className="w-full pl-11 pr-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all shadow-sm"
                 />
               </div>
@@ -188,23 +182,13 @@ const ForgotPassword = () => {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                     />
                   </svg>
-                  Sending...
+                  Resetting...
                 </span>
               ) : (
-                "Send Reset Link"
+                "Reset Password"
               )}
             </button>
           </form>
-
-          <div className="mt-6 text-center">
-            <button
-              onClick={() => navigate("/login")}
-              className="inline-flex items-center gap-2 text-sm text-emerald-600 hover:text-emerald-700 font-semibold transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Login
-            </button>
-          </div>
         </div>
       </div>
 
@@ -215,4 +199,4 @@ const ForgotPassword = () => {
   );
 };
 
-export default ForgotPassword;
+export default ResetPassword;
