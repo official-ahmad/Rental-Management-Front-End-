@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { apiClient } from "../config/api";
 import styled from "styled-components";
 import Swal from "sweetalert2";
 import {
@@ -404,7 +405,7 @@ const Home = () => {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const response = await axios.post(API.BOOKINGS.CREATE, {
+          const response = await apiClient.post(API.BOOKINGS.CREATE, {
             propertyId: prop._id,
             tenantId: userId,
           });
