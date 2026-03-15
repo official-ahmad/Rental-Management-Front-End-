@@ -597,7 +597,7 @@ const TenantDashboard = () => {
                   <span className="chip-name">{userName}</span>
                 </div>
                 <button className="btn btn-ghost" onClick={() => navigate("/")}>
-                  <FaArrowLeft size={11} /> Back
+                  <FaArrowLeft size={11} /> Back to Dashboard
                 </button>
                 <button
                   className="btn btn-red-soft"
@@ -638,7 +638,7 @@ const TenantDashboard = () => {
                   setMobOpen(false);
                 }}
               >
-                <FaArrowLeft size={12} /> Back to Home
+                <FaArrowLeft size={12} /> Dashboard
               </button>
               <button
                 className="btn btn-red-soft"
