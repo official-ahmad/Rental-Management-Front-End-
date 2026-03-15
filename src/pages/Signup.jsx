@@ -244,7 +244,7 @@ const Signup = () => {
                   className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all appearance-none cursor-pointer shadow-sm"
                 >
                   <option value="Tenant">Tenant</option>
-                  {/* <option value="Manager">Manager</option> */}
+                  <option value="Manager">Manager</option>
                 </select>
               </div>
             </div>
