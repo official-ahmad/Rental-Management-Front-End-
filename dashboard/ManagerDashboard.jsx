@@ -3,166 +3,189 @@ import { useNavigate } from "react-router-dom";
 import { toast, Toaster } from "react-hot-toast";
 import Swal from "sweetalert2";
 import {
-  FaBuilding,
-  FaUsers,
-  FaSignOutAlt,
-  FaMapMarkerAlt,
-  FaBars,
-  FaCheck,
-  FaTimes,
-  FaInbox,
-  FaSearch,
-  FaUserCircle,
-  FaPlus,
-  FaEdit,
-  FaTrash,
-  FaChartLine,
-} from "react-icons/fa";
-import {
-  MDBContainer,
-  MDBCard,
-  MDBCardBody,
-  MDBBtn,
-  MDBTable,
-  MDBTableHead,
-  MDBTableBody,
-  MDBModal,
-  MDBModalDialog,
-  MDBModalContent,
-  MDBModalHeader,
-  MDBModalTitle,
-  MDBModalBody,
-  MDBInput,
-} from "mdb-react-ui-kit";
+  Building2,
+  Users,
+  LogOut,
+  MapPin,
+  Menu,
+  Check,
+  X,
+  Inbox,
+  Search,
+  Plus,
+  Edit3,
+  Trash2,
+  Eye,
+  ChevronRight,
+  Home,
+  RefreshCw,
+} from "lucide-react";
 import { API, apiClient } from "../src/config/api";
 import { getDisplayName, formatDate } from "../src/utils/helpers";
 
+/* ─── Status cycle config ─────────────────────────────────────── */
+const STATUS_CYCLE = {
+  Vacant: "Occupied",
+  Occupied: "Maintenance",
+  Maintenance: "Vacant",
+};
+const STATUS_STYLE = {
+  Vacant: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+  Occupied: "bg-amber-50   text-amber-700   border border-amber-200",
+  Maintenance: "bg-slate-100  text-slate-600   border border-slate-200",
+};
+
+/* ─── Empty property form ─────────────────────────────────────── */
+const EMPTY_FORM = {
+  propertyName: "",
+  location: "",
+  rentAmount: "",
+  bedrooms: "",
+  bathrooms: "",
+  area: "",
+  image: "",
+  description: "",
+  status: "Vacant",
+};
+
+/* ══════════════════════════════════════════════════════════════ */
 const ManagerDashboard = () => {
   const navigate = useNavigate();
   const role = localStorage.getItem("userRole");
-  const managerName = localStorage.getItem("userName") || "Admin Manager";
-  const managerEmail =
-    localStorage.getItem("userEmail") || "manager@property.com";
+  const managerName = localStorage.getItem("userName") || "Manager";
+  const managerEmail = localStorage.getItem("userEmail") || "";
+  const API_BASE = API.MANAGER.BASE;
 
+  /* ── UI state ─────────────────────────────────────────────── */
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("properties");
   const [searchTerm, setSearchTerm] = useState("");
 
-  const [requests, setRequests] = useState([]);
+  /* ── Data state ───────────────────────────────────────────── */
   const [properties, setProperties] = useState([]);
+  const [requests, setRequests] = useState([]);
   const [activeTenants, setActiveTenants] = useState([]);
 
-  const API_BASE = API.MANAGER.BASE;
-
-  const [modalOpen, setModalOpen] = useState(false);
+  /* ── Property modal ───────────────────────────────────────── */
+  const [propModal, setPropModal] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
-  const [formData, setFormData] = useState({
-    _id: "",
-    propertyName: "",
-    location: "",
-    rentAmount: "",
-    bedrooms: "",
-    bathrooms: "",
-    area: "",
-    image: "",
-    description: "",
-    status: "Vacant",
-  });
+  const [formData, setFormData] = useState(EMPTY_FORM);
+  const [editId, setEditId] = useState(null);
 
+  /* ── Tenant detail modal ──────────────────────────────────── */
+  const [tenantModal, setTenantModal] = useState(false);
+  const [selectedTenant, setSelectedTenant] = useState(null);
+
+  /* ── Status toggle loading set ────────────────────────────── */
+  const [statusBusy, setStatusBusy] = useState(new Set());
+
+  /* ── Fetch all data ───────────────────────────────────────── */
   const fetchData = useCallback(async () => {
+    setLoading(true);
     try {
       const [propRes, bookRes] = await Promise.all([
         apiClient.get(`${API_BASE}/properties`),
         apiClient.get(API.BOOKINGS.ALL_REQUESTS),
       ]);
       setProperties(propRes.data || []);
-      const allBookings = bookRes.data || [];
-      setRequests(allBookings.filter((req) => req.status === "Pending"));
-      setActiveTenants(allBookings.filter((req) => req.status === "Approved"));
+      const all = bookRes.data || [];
+      setRequests(all.filter((r) => r.status === "Pending"));
+      setActiveTenants(all.filter((r) => r.status === "Approved"));
     } catch {
-      toast.error("Failed to load data");
+      toast.error("Failed to load data. Check your connection.");
     } finally {
       setLoading(false);
     }
   }, [API_BASE]);
 
   useEffect(() => {
-    if (!role || role !== "Manager") {
-      toast.error("Access denied.");
+    if (!role || role.toLowerCase() !== "manager") {
+      toast.error("Access denied. Manager only.");
       navigate("/page", { replace: true });
     } else {
       fetchData();
     }
   }, [role, navigate, fetchData]);
 
-  const handleOpenModal = useCallback((prop = null) => {
+  /* ── Tab change (closes mobile sidebar) ────────────────────── */
+  const handleTabChange = useCallback((id) => {
+    setActiveTab(id);
+    setSearchTerm("");
+    setMobileOpen(false);
+  }, []);
+
+  /* ── Property modal helpers ──────────────────────────────────*/
+  const openPropModal = useCallback((prop = null) => {
     if (prop) {
-      setFormData({ ...prop });
       setIsEdit(true);
-    } else {
+      setEditId(prop._id);
       setFormData({
-        _id: "",
-        propertyName: "",
-        location: "",
-        rentAmount: "",
-        bedrooms: "",
-        bathrooms: "",
-        area: "",
-        image: "",
-        description: "",
-        status: "Vacant",
+        propertyName: prop.propertyName || "",
+        location: prop.location || "",
+        rentAmount: prop.rentAmount || "",
+        bedrooms: prop.bedrooms || "",
+        bathrooms: prop.bathrooms || "",
+        area: prop.area || "",
+        image: prop.image || "",
+        description: prop.description || "",
+        status: prop.status || "Vacant",
       });
+    } else {
       setIsEdit(false);
+      setEditId(null);
+      setFormData(EMPTY_FORM);
     }
-    setModalOpen(true);
+    setPropModal(true);
   }, []);
 
   const handleFormSubmit = useCallback(
     async (e) => {
       e.preventDefault();
+      const payload = {
+        ...formData,
+        rentAmount: Number(formData.rentAmount),
+        bedrooms: Number(formData.bedrooms),
+        bathrooms: Number(formData.bathrooms),
+        area: Number(formData.area),
+      };
       try {
-        const finalData = {
-          ...formData,
-          rentAmount: Number(formData.rentAmount),
-          bedrooms: Number(formData.bedrooms),
-          bathrooms: Number(formData.bathrooms),
-        };
-
         if (isEdit) {
-          await apiClient.put(`${API_BASE}/update/${formData._id}`, finalData);
-          toast.success("Property Updated!");
+          await apiClient.put(`${API_BASE}/update/${editId}`, payload);
+          toast.success("Property updated!");
         } else {
-          const { _id, ...newPropertyData } = finalData;
-          await apiClient.post(`${API_BASE}/add`, newPropertyData);
-          toast.success("Property Added Successfully!");
+          await apiClient.post(`${API_BASE}/add`, payload);
+          toast.success("Property added!");
         }
-        setModalOpen(false);
+        setPropModal(false);
         fetchData();
       } catch (err) {
-        toast.error(err.response?.data?.error || "Operation failed");
+        toast.error(err.response?.data?.error || "Operation failed.");
       }
     },
-    [formData, isEdit, API_BASE, fetchData],
+    [formData, isEdit, editId, API_BASE, fetchData],
   );
 
+  /* ── Property delete ─────────────────────────────────────── */
   const handleDelete = useCallback(
     (id) => {
       Swal.fire({
-        title: "Are you sure?",
-        text: "You won't be able to revert this property!",
+        title: "Delete property?",
+        text: "This action cannot be undone.",
         icon: "warning",
         showCancelButton: true,
-        confirmButtonColor: "#dc3545",
-        confirmButtonText: "Yes, delete it!",
-      }).then(async (result) => {
-        if (result.isConfirmed) {
+        confirmButtonColor: "#ef4444",
+        cancelButtonColor: "#64748b",
+        confirmButtonText: "Yes, delete",
+      }).then(async (res) => {
+        if (res.isConfirmed) {
           try {
             await apiClient.delete(`${API_BASE}/delete/${id}`);
-            toast.success("Property deleted successfully");
+            toast.success("Property deleted.");
             fetchData();
           } catch {
-            toast.error("Delete failed");
+            toast.error("Delete failed.");
           }
         }
       });
@@ -170,583 +193,815 @@ const ManagerDashboard = () => {
     [API_BASE, fetchData],
   );
 
-  const handleStatusUpdate = useCallback(
-    async (bookingId, newStatus) => {
+  /* ── Inline status toggle ────────────────────────────────── */
+  const handleStatusToggle = useCallback(
+    async (prop) => {
+      const next = STATUS_CYCLE[prop.status] || "Vacant";
+      setStatusBusy((s) => new Set(s).add(prop._id));
       try {
-        await apiClient.put(API.BOOKINGS.UPDATE(bookingId), {
-          status: newStatus,
+        await apiClient.put(`${API_BASE}/update/${prop._id}`, {
+          ...prop,
+          rentAmount: Number(prop.rentAmount),
+          bedrooms: Number(prop.bedrooms),
+          bathrooms: Number(prop.bathrooms),
+          status: next,
         });
-        toast.success(`Booking ${newStatus}!`);
+        setProperties((prev) =>
+          prev.map((p) => (p._id === prop._id ? { ...p, status: next } : p)),
+        );
+        toast.success(`Status set to ${next}`);
+      } catch {
+        toast.error("Status update failed.");
+      } finally {
+        setStatusBusy((s) => {
+          const n = new Set(s);
+          n.delete(prop._id);
+          return n;
+        });
+      }
+    },
+    [API_BASE],
+  );
+
+  /* ── Booking action ──────────────────────────────────────── */
+  const handleBookingAction = useCallback(
+    async (bookingId, status) => {
+      try {
+        await apiClient.put(API.BOOKINGS.UPDATE(bookingId), { status });
+        toast.success(`Booking ${status.toLowerCase()}.`);
         fetchData();
       } catch {
-        toast.error("Update failed");
+        toast.error("Update failed.");
       }
     },
     [fetchData],
   );
 
+  /* ── Logout ──────────────────────────────────────────────── */
   const handleLogout = useCallback(() => {
     Swal.fire({
-      title: "Logout?",
-      text: "Ready to end your session?",
+      title: "Sign out?",
+      text: "You will be redirected to the login page.",
       icon: "question",
       showCancelButton: true,
-      confirmButtonColor: "#1a237e",
-      confirmButtonText: "Logout",
-    }).then((result) => {
-      if (result.isConfirmed) {
+      confirmButtonColor: "#0f172a",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "Sign out",
+    }).then((res) => {
+      if (res.isConfirmed) {
         localStorage.clear();
         navigate("/page");
       }
     });
   }, [navigate]);
 
-  // Memoized filtered data for performance
+  /* ── Filtered list for active tab ───────────────────────── */
   const filteredList = useMemo(() => {
-    const term = searchTerm.toLowerCase();
-    if (activeTab === "properties") {
-      return properties.filter(
-        (p) =>
-          p.propertyName?.toLowerCase().includes(term) ||
-          p.location?.toLowerCase().includes(term),
-      );
-    }
-    if (activeTab === "requests") {
-      return requests.filter(
-        (r) =>
-          getDisplayName(r.tenantId).toLowerCase().includes(term) ||
-          r.propertyId?.propertyName?.toLowerCase().includes(term),
-      );
-    }
-    return activeTenants.filter(
-      (t) =>
-        getDisplayName(t.tenantId).toLowerCase().includes(term) ||
-        t.propertyId?.propertyName?.toLowerCase().includes(term),
-    );
+    const src =
+      activeTab === "requests"
+        ? requests
+        : activeTab === "tenants"
+          ? activeTenants
+          : properties;
+
+    const q = searchTerm.toLowerCase().trim();
+    if (!q) return src;
+
+    return src.filter((item) => {
+      const name = (
+        item.propertyName ||
+        getDisplayName(item.tenantId) ||
+        ""
+      ).toLowerCase();
+      const loc = (
+        item.location ||
+        item.propertyId?.propertyName ||
+        ""
+      ).toLowerCase();
+      const email = (item.email || item.tenantId?.email || "").toLowerCase();
+      return name.includes(q) || loc.includes(q) || email.includes(q);
+    });
   }, [activeTab, searchTerm, properties, requests, activeTenants]);
 
-  // Memoize handlers
-  const handleTabChange = useCallback((tabId) => {
-    setActiveTab(tabId);
-    setSearchTerm("");
-  }, []);
+  /* ── Nav items ───────────────────────────────────────────── */
+  const navItems = useMemo(
+    () => [
+      {
+        id: "properties",
+        label: "Inventory",
+        icon: Building2,
+        count: properties.length,
+      },
+      {
+        id: "requests",
+        label: "Requests",
+        icon: Inbox,
+        count: requests.length,
+        badge: requests.length > 0,
+      },
+      {
+        id: "tenants",
+        label: "Tenants",
+        icon: Users,
+        count: activeTenants.length,
+      },
+    ],
+    [properties.length, requests.length, activeTenants.length],
+  );
 
-  const handleSearchChange = useCallback((e) => {
-    setSearchTerm(e.target.value);
-  }, []);
-
+  /* ── Loading screen ──────────────────────────────────────── */
   if (loading)
     return (
-      <div className="d-flex justify-content-center align-items-center min-vh-100 bg-light">
-        <div className="spinner-grow text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
+      <div className="min-h-screen bg-[#f0f4f8] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <RefreshCw className="w-8 h-8 text-emerald-500 animate-spin" />
+          <p className="text-slate-400 text-sm font-medium">
+            Loading dashboard…
+          </p>
         </div>
       </div>
     );
 
+  /* ── Render ──────────────────────────────────────────────── */
   return (
-    <div
-      style={{
-        display: "flex",
-        minHeight: "100vh",
-        backgroundColor: "#f8f9fc",
-      }}
-    >
-      <Toaster position="top-right" />
+    <div className="flex min-h-screen bg-[#f0f4f8]">
+      <Toaster
+        position="top-right"
+        toastOptions={{ style: { borderRadius: 12, fontSize: 13 } }}
+      />
 
-      {/* Sidebar */}
-      <div
-        style={{
-          width: sidebarOpen ? "280px" : "85px",
-          background: "linear-gradient(180deg, #1a237e 0%, #121858 100%)",
-          color: "white",
-          padding: "24px 16px",
-          transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
-          position: "sticky",
-          top: 0,
-          height: "100vh",
-          boxShadow: "4px 0 10px rgba(0,0,0,0.1)",
-          zIndex: 1000,
-        }}
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* ─── SIDEBAR ──────────────────────────────────────────── */}
+      <aside
+        className={`
+          ${sidebarOpen ? "w-64" : "w-20"}
+          fixed lg:sticky top-0 h-screen bg-[#0f172a] text-white
+          flex flex-col flex-shrink-0 z-50 transition-all duration-300 ease-in-out
+          ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+        `}
       >
-        <div className="d-flex justify-content-between align-items-center mb-5 px-2">
+        {/* Logo row */}
+        <div className="p-5 flex items-center justify-between border-b border-white/10">
           {sidebarOpen && (
-            <div className="d-flex align-items-center gap-2">
-              <div
-                className="bg-white rounded-circle p-1 d-flex align-items-center justify-content-center"
-                style={{ width: "32px", height: "32px" }}
-              >
-                <FaChartLine className="text-primary" size={18} />
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Home className="w-4 h-4 text-white" />
               </div>
-              <h5 className="fw-bold m-0 text-white">ESTATE PRO</h5>
+              <span className="font-bold text-sm tracking-tight">
+                ESTATE PRO
+              </span>
             </div>
           )}
-          <FaBars
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            style={{ cursor: "pointer", opacity: 0.8 }}
-            size={20}
-          />
-        </div>
-
-        <div className={`text-center mb-5 ${!sidebarOpen && "d-none"}`}>
-          <FaUserCircle size={64} className="text-white-50 mb-2" />
-          <h6 className="mb-1 fw-bold text-white">{managerName}</h6>
-          <p className="text-white-50 small">{managerEmail}</p>
-        </div>
-
-        <div className="d-flex flex-column gap-3">
-          {[
-            { id: "properties", label: "Inventory", icon: <FaBuilding /> },
-            { id: "requests", label: "Requests", icon: <FaInbox /> },
-            { id: "tenants", label: "Tenants", icon: <FaUsers /> },
-          ].map((item) => (
-            <div
-              key={item.id}
-              onClick={() => handleTabChange(item.id)}
-              className="sidebar-item"
-              style={{
-                cursor: "pointer",
-                padding: "14px 18px",
-                borderRadius: "12px",
-                display: "flex",
-                alignItems: "center",
-                background:
-                  activeTab === item.id
-                    ? "rgba(255,255,255,0.15)"
-                    : "transparent",
-              }}
-            >
-              <span
-                className={`me-3 ${
-                  activeTab === item.id ? "text-white" : "text-white-50"
-                }`}
-              >
-                {item.icon}
-              </span>
-              {sidebarOpen && <span>{item.label}</span>}
-            </div>
-          ))}
-          <div
-            onClick={handleLogout}
-            className="mt-auto p-3 text-danger logout-hover"
-            style={{ cursor: "pointer" }}
+          <button
+            onClick={() => setSidebarOpen((o) => !o)}
+            className="text-slate-400 hover:text-white transition-colors p-1 ml-auto"
           >
-            <FaSignOutAlt className="me-3" /> {sidebarOpen && "Sign Out"}
-          </div>
+            <Menu className="w-5 h-5" />
+          </button>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div style={{ flex: 1, padding: "40px", overflowY: "auto" }}>
-        <MDBContainer fluid className="p-0">
-          <div className="d-flex flex-column flex-md-row justify-content-between align-items-end mb-5 gap-3">
-            <div>
-              <h2
-                className="fw-black text-dark m-0"
-                style={{ fontWeight: 900 }}
-              >
-                {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}{" "}
-                Management
-              </h2>
-            </div>
-
-            <div className="d-flex gap-3 align-items-center">
-              <div className="position-relative" style={{ width: "320px" }}>
-                <FaSearch className="position-absolute top-50 translate-middle-y text-muted ms-3" />
-                <input
-                  className="form-control border-0 shadow-sm ps-5 py-2"
-                  placeholder={`Search ${activeTab}...`}
-                  style={{ borderRadius: "10px", height: "45px" }}
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                />
+        {/* Avatar block */}
+        {sidebarOpen && (
+          <div className="px-4 py-4 border-b border-white/10">
+            <div className="bg-white/5 rounded-xl p-3 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold text-sm flex-shrink-0">
+                {managerName.charAt(0).toUpperCase()}
               </div>
-              {activeTab === "properties" && (
-                <MDBBtn
-                  className="shadow-sm border-0 px-4"
-                  style={{
-                    background: "#1a237e",
-                    borderRadius: "10px",
-                    height: "45px",
-                  }}
-                  onClick={() => handleOpenModal()}
-                >
-                  <FaPlus className="me-2" /> Add New
-                </MDBBtn>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold truncate">{managerName}</p>
+                <p className="text-xs text-slate-400">Property Manager</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Nav */}
+        <nav className="flex-1 px-3 py-4 space-y-1">
+          {navItems.map(({ id, label, icon: Icon, badge, count }) => (
+            <button
+              key={id}
+              onClick={() => handleTabChange(id)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                activeTab === id
+                  ? "bg-emerald-500/15 text-emerald-400"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+              }`}
+            >
+              <Icon className="w-[18px] h-[18px] flex-shrink-0" />
+              {sidebarOpen && (
+                <>
+                  <span className="flex-1 text-left">{label}</span>
+                  {badge && count > 0 && (
+                    <span className="bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                      {count}
+                    </span>
+                  )}
+                </>
               )}
+            </button>
+          ))}
+        </nav>
+
+        {/* Logout */}
+        <div className="p-3 border-t border-white/10">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 transition-all"
+          >
+            <LogOut className="w-[18px] h-[18px]" />
+            {sidebarOpen && <span>Sign Out</span>}
+          </button>
+        </div>
+      </aside>
+
+      {/* ─── MAIN CONTENT ─────────────────────────────────────── */}
+      <main className="flex-1 min-w-0 overflow-x-hidden">
+        {/* Top bar */}
+        <div className="sticky top-0 z-30 bg-white/90 backdrop-blur-lg border-b border-slate-200/60 px-6 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              className="lg:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
+              onClick={() => setMobileOpen(true)}
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <div>
+              <h1 className="text-xl font-bold text-slate-900">
+                {activeTab === "properties"
+                  ? "Property Inventory"
+                  : activeTab === "requests"
+                    ? "Booking Requests"
+                    : "Active Tenants"}
+              </h1>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {new Date().toLocaleDateString("en-IN", {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </p>
             </div>
           </div>
 
-          <MDBCard
-            className="border-0 shadow-sm"
-            style={{ borderRadius: "20px", overflow: "hidden" }}
-          >
-            <MDBCardBody className="p-0">
-              <MDBTable hover responsive align="middle" className="mb-0">
-                <MDBTableHead style={{ backgroundColor: "#f8f9fc" }}>
-                  <tr>
-                    {activeTab === "properties" ? (
+          <div className="flex items-center gap-3">
+            {/* Search — hidden on xs, shown sm+ */}
+            <div className="hidden sm:flex items-center relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              <input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder={`Search ${activeTab}…`}
+                className="pl-10 pr-4 py-2 w-56 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 shadow-sm"
+              />
+            </div>
+
+            <button
+              onClick={fetchData}
+              className="p-2 rounded-xl border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 shadow-sm transition-colors"
+              title="Refresh"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
+
+            {activeTab === "properties" && (
+              <button
+                onClick={() => openPropModal()}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 active:scale-[0.97] transition-all shadow-lg shadow-emerald-600/20"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Add Property</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile search */}
+        <div className="sm:hidden px-4 pt-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            <input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder={`Search ${activeTab}…`}
+              className="pl-10 pr-4 py-2.5 w-full bg-white border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 shadow-sm"
+            />
+          </div>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* ── Stats Row ───────────────────────────────────────── */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              {
+                label: "Properties",
+                value: properties.length,
+                icon: Building2,
+                color: "bg-blue-50 text-blue-600",
+              },
+              {
+                label: "Pending Requests",
+                value: requests.length,
+                icon: Inbox,
+                color: "bg-amber-50 text-amber-600",
+              },
+              {
+                label: "Active Tenants",
+                value: activeTenants.length,
+                icon: Users,
+                color: "bg-emerald-50 text-emerald-600",
+              },
+            ].map(({ label, value, icon: Icon, color }) => (
+              <div
+                key={label}
+                className="bg-white rounded-2xl border border-slate-200/60 p-5 shadow-sm hover:shadow-md transition-shadow"
+              >
+                <div
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center ${color} mb-3`}
+                >
+                  <Icon className="w-5 h-5" />
+                </div>
+                <p className="text-2xl font-extrabold text-slate-900">
+                  {value}
+                </p>
+                <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mt-0.5">
+                  {label}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* ── Data Table ──────────────────────────────────────── */}
+          <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[600px]">
+                <thead>
+                  <tr className="bg-slate-50/80 border-b border-slate-100">
+                    {activeTab === "properties" && (
                       <>
-                        <th className="ps-4 border-0 text-muted small fw-bold">
-                          PROPERTY DETAILS
-                        </th>
-                        <th className="border-0 text-muted small fw-bold">
-                          LOCATION
-                        </th>
-                        <th className="border-0 text-muted small fw-bold">
-                          RENT
-                        </th>
-                        <th className="border-0 text-muted small fw-bold text-center">
-                          STATUS
-                        </th>
-                        <th className="border-0 text-muted small fw-bold text-end pe-4">
-                          ACTIONS
-                        </th>
+                        <Th>Property</Th>
+                        <Th className="hidden md:table-cell">Location</Th>
+                        <Th>Rent / mo</Th>
+                        <Th>Status</Th>
+                        <Th right>Actions</Th>
                       </>
-                    ) : activeTab === "requests" ? (
+                    )}
+                    {activeTab === "requests" && (
                       <>
-                        <th className="ps-4 border-0 text-muted small fw-bold">
-                          PROSPECTIVE TENANT
-                        </th>
-                        <th className="border-0 text-muted small fw-bold">
-                          PROPERTY
-                        </th>
-                        <th className="border-0 text-muted small fw-bold">
-                          REQUEST DATE
-                        </th>
-                        <th className="border-0 text-muted small fw-bold text-center">
-                          DECISION
-                        </th>
+                        <Th>Tenant</Th>
+                        <Th className="hidden md:table-cell">Property</Th>
+                        <Th className="hidden sm:table-cell">Date</Th>
+                        <Th center>Decision</Th>
                       </>
-                    ) : (
+                    )}
+                    {activeTab === "tenants" && (
                       <>
-                        <th className="ps-4 border-0 text-muted small fw-bold">
-                          ACTIVE TENANT
-                        </th>
-                        <th className="border-0 text-muted small fw-bold">
-                          ASSIGNED UNIT
-                        </th>
-                        <th className="border-0 text-muted small fw-bold text-center">
-                          LEASE STATUS
-                        </th>
+                        <Th>Tenant</Th>
+                        <Th className="hidden md:table-cell">Property</Th>
+                        <Th className="hidden sm:table-cell">Rent</Th>
+                        <Th right>Details</Th>
                       </>
                     )}
                   </tr>
-                </MDBTableHead>
-                <MDBTableBody>
-                  {filteredList.map((item) => (
-                    <tr key={item._id}>
-                      {activeTab === "properties" && (
-                        <>
-                          <td className="ps-4 py-4">
-                            <div className="d-flex align-items-center">
-                              <img
-                                src={item.image || "https://placehold.co/40x40"}
-                                className="rounded-3 me-3 shadow-sm"
-                                style={{
-                                  width: "45px",
-                                  height: "45px",
-                                  objectFit: "cover",
-                                }}
-                              />
-                              <div>
-                                <div className="fw-bold text-dark">
-                                  {item.propertyName}
-                                </div>
-                                <div className="text-muted small">
-                                  {item.area} sqft | {item.bedrooms} Bed |{" "}
-                                  {item.bathrooms} Bath
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredList.length > 0 ? (
+                    filteredList.map((item) => (
+                      <tr
+                        key={item._id}
+                        className="hover:bg-slate-50/50 transition-colors"
+                      >
+                        {/* ── Properties rows ── */}
+                        {activeTab === "properties" && (
+                          <>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <img
+                                  src={
+                                    item.image ||
+                                    "https://placehold.co/40x40/f1f5f9/94a3b8?text=P"
+                                  }
+                                  alt=""
+                                  className="w-10 h-10 rounded-lg object-cover flex-shrink-0 bg-slate-100"
+                                />
+                                <div>
+                                  <p className="text-sm font-semibold text-slate-800">
+                                    {item.propertyName}
+                                  </p>
+                                  <p className="text-xs text-slate-400">
+                                    {item.bedrooms}bd · {item.bathrooms}ba ·{" "}
+                                    {item.area} sqft
+                                  </p>
                                 </div>
                               </div>
-                            </div>
-                          </td>
-                          <td>
-                            <FaMapMarkerAlt
-                              className="text-danger me-2 opacity-50"
-                              size={12}
-                            />
-                            {item.location}
-                          </td>
-                          <td>
-                            <span className="fw-bold text-dark">
-                              Rs. {item.rentAmount?.toLocaleString()}
-                            </span>
-                          </td>
-                          <td className="text-center">
-                            <span
-                              className="badge rounded-pill px-3 py-2"
-                              style={{
-                                backgroundColor:
-                                  item.status === "Occupied"
-                                    ? "#e8f5e9"
-                                    : "#fffde7",
-                                color:
-                                  item.status === "Occupied"
-                                    ? "#2e7d32"
-                                    : "#f9a825",
-                                fontWeight: "600",
-                              }}
-                            >
-                              {item.status || "Vacant"}
-                            </span>
-                          </td>
-                          <td className="text-end pe-4">
-                            <MDBBtn
-                              color="link"
-                              className="p-2"
-                              onClick={() => handleOpenModal(item)}
-                            >
-                              <FaEdit className="text-primary" />
-                            </MDBBtn>
-                            <MDBBtn
-                              color="link"
-                              className="p-2"
-                              onClick={() => handleDelete(item._id)}
-                            >
-                              <FaTrash className="text-danger" />
-                            </MDBBtn>
-                          </td>
-                        </>
-                      )}
+                            </td>
+                            <td className="px-6 py-4 hidden md:table-cell">
+                              <div className="flex items-center gap-1.5 text-sm text-slate-500">
+                                <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                                <span className="truncate max-w-[160px]">
+                                  {item.location}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-sm font-semibold text-slate-800">
+                              ₹{Number(item.rentAmount).toLocaleString("en-IN")}
+                            </td>
+                            <td className="px-6 py-4">
+                              {/* Clickable status badge — cycles through statuses */}
+                              <button
+                                onClick={() => handleStatusToggle(item)}
+                                disabled={statusBusy.has(item._id)}
+                                title="Click to change status"
+                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all hover:opacity-80 disabled:opacity-40 cursor-pointer ${
+                                  STATUS_STYLE[item.status] ||
+                                  STATUS_STYLE.Vacant
+                                }`}
+                              >
+                                {statusBusy.has(item._id)
+                                  ? "…"
+                                  : item.status || "Vacant"}
+                                {!statusBusy.has(item._id) && (
+                                  <ChevronRight className="w-3 h-3 opacity-60" />
+                                )}
+                              </button>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center justify-end gap-1">
+                                <button
+                                  onClick={() => openPropModal(item)}
+                                  className="p-2 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
+                                  title="Edit"
+                                >
+                                  <Edit3 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(item._id)}
+                                  className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                                  title="Delete"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </>
+                        )}
 
-                      {activeTab === "requests" && (
-                        <>
-                          <td className="ps-4 py-4">
-                            <div className="fw-bold text-dark">
-                              {getDisplayName(item.tenantId)}
-                            </div>
-                            <div className="text-muted small">
-                              {item.tenantId?.email}
-                            </div>
-                          </td>
-                          <td>
-                            <div className="fw-500">
-                              {item.propertyId?.propertyName}
-                            </div>
-                          </td>
-                          <td>{formatDate(item.bookingDate)}</td>
-                          <td className="text-center">
-                            <MDBBtn
-                              size="sm"
-                              color="success"
-                              className="me-2 rounded-3"
-                              onClick={() =>
-                                handleStatusUpdate(item._id, "Approved")
-                              }
-                            >
-                              <FaCheck />
-                            </MDBBtn>
-                            <MDBBtn
-                              size="sm"
-                              color="danger"
-                              className="rounded-3"
-                              onClick={() =>
-                                handleStatusUpdate(item._id, "Rejected")
-                              }
-                            >
-                              <FaTimes />
-                            </MDBBtn>
-                          </td>
-                        </>
-                      )}
+                        {/* ── Requests rows ── */}
+                        {activeTab === "requests" && (
+                          <>
+                            <td className="px-6 py-4">
+                              <p className="text-sm font-semibold text-slate-800">
+                                {getDisplayName(item.tenantId) || "—"}
+                              </p>
+                              <p className="text-xs text-slate-400">
+                                {item.tenantId?.email}
+                              </p>
+                            </td>
+                            <td className="px-6 py-4 hidden md:table-cell">
+                              <p className="text-sm font-medium text-slate-700">
+                                {item.propertyId?.propertyName || "—"}
+                              </p>
+                              <p className="text-xs text-slate-400">
+                                ₹
+                                {Number(
+                                  item.propertyId?.rentAmount || 0,
+                                ).toLocaleString("en-IN")}
+                                /mo
+                              </p>
+                            </td>
+                            <td className="px-6 py-4 text-sm text-slate-400 hidden sm:table-cell">
+                              {formatDate(item.bookingDate)}
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center justify-center gap-2 flex-wrap">
+                                <button
+                                  onClick={() =>
+                                    handleBookingAction(item._id, "Approved")
+                                  }
+                                  className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-semibold hover:bg-emerald-700 transition-colors"
+                                >
+                                  <Check className="w-3 h-3" /> Approve
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    handleBookingAction(item._id, "Rejected")
+                                  }
+                                  className="flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white rounded-lg text-xs font-semibold hover:bg-red-600 transition-colors"
+                                >
+                                  <X className="w-3 h-3" /> Reject
+                                </button>
+                              </div>
+                            </td>
+                          </>
+                        )}
 
-                      {activeTab === "tenants" && (
-                        <>
-                          <td className="ps-4 py-4">
-                            <div className="fw-bold text-dark">
-                              {getDisplayName(item.tenantId)}
-                            </div>
-                            <div className="text-muted small">
-                              {item.tenantId?.email}
-                            </div>
-                          </td>
-                          <td>
-                            <div className="fw-bold">
-                              {item.propertyId?.propertyName}
-                            </div>
-                            <div className="text-muted small">
-                              {item.propertyId?.location}
-                            </div>
-                          </td>
-                          <td className="text-center">
-                            <span
-                              className="badge rounded-pill px-3 py-2"
-                              style={{
-                                backgroundColor: "#e3f2fd",
-                                color: "#1976d2",
-                              }}
-                            >
-                              Active Lease
-                            </span>
-                          </td>
-                        </>
-                      )}
+                        {/* ── Tenant rows ── */}
+                        {activeTab === "tenants" && (
+                          <>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-sm flex-shrink-0">
+                                  {(getDisplayName(item.tenantId) || "T")
+                                    .charAt(0)
+                                    .toUpperCase()}
+                                </div>
+                                <div>
+                                  <p className="text-sm font-semibold text-slate-800">
+                                    {getDisplayName(item.tenantId) || "—"}
+                                  </p>
+                                  <p className="text-xs text-slate-400">
+                                    {item.tenantId?.email}
+                                  </p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 hidden md:table-cell">
+                              <p className="text-sm font-medium text-slate-700">
+                                {item.propertyId?.propertyName || "—"}
+                              </p>
+                              <p className="text-xs text-slate-400">
+                                {item.propertyId?.location}
+                              </p>
+                            </td>
+                            <td className="px-6 py-4 hidden sm:table-cell">
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700">
+                                ₹
+                                {Number(
+                                  item.propertyId?.rentAmount || 0,
+                                ).toLocaleString("en-IN")}
+                                /mo
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <button
+                                onClick={() => {
+                                  setSelectedTenant(item);
+                                  setTenantModal(true);
+                                }}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-200 transition-colors ml-auto"
+                              >
+                                <Eye className="w-3.5 h-3.5" /> View
+                              </button>
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="py-16 text-center">
+                        <div className="flex flex-col items-center gap-2">
+                          <Building2 className="w-8 h-8 text-slate-200" />
+                          <p className="text-slate-400 text-sm">
+                            No {activeTab} found
+                          </p>
+                        </div>
+                      </td>
                     </tr>
-                  ))}
-                </MDBTableBody>
-              </MDBTable>
-            </MDBCardBody>
-          </MDBCard>
-        </MDBContainer>
-      </div>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
 
-      {/* Modal - Added Bedrooms and Bathrooms Fields */}
-      <MDBModal open={modalOpen} setOpen={setModalOpen} tabIndex="-1">
-        <MDBModalDialog size="lg" centered>
-          <MDBModalContent style={{ borderRadius: "24px", border: "none" }}>
-            <MDBModalHeader className="border-0 pt-4 px-4">
-              <MDBModalTitle className="fw-900" style={{ fontSize: "1.5rem" }}>
-                {isEdit ? "Update Property" : "Register New Property"}
-              </MDBModalTitle>
-              <MDBBtn
-                className="btn-close"
-                color="none"
-                onClick={() => setModalOpen(false)}
-              ></MDBBtn>
-            </MDBModalHeader>
-            <MDBModalBody className="p-4">
-              <form onSubmit={handleFormSubmit}>
-                <div className="row g-4">
-                  <div className="col-md-6">
-                    <label className="small fw-bold text-muted">Title</label>
-                    <MDBInput
-                      value={formData.propertyName}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          propertyName: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="small fw-bold text-muted">Location</label>
-                    <MDBInput
-                      value={formData.location}
-                      onChange={(e) =>
-                        setFormData({ ...formData, location: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
-                  <div className="col-md-4">
-                    <label className="small fw-bold text-muted">Rent</label>
-                    <MDBInput
-                      type="number"
-                      value={formData.rentAmount}
-                      onChange={(e) =>
-                        setFormData({ ...formData, rentAmount: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
-                  <div className="col-md-4">
-                    <label className="small fw-bold text-muted">
-                      Area (sqft)
-                    </label>
-                    <MDBInput
-                      type="number"
-                      value={formData.area}
-                      onChange={(e) =>
-                        setFormData({ ...formData, area: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
-                  <div className="col-md-4">
-                    <label className="small fw-bold text-muted">Status</label>
-                    <select
-                      className="form-select"
-                      value={formData.status}
-                      onChange={(e) =>
-                        setFormData({ ...formData, status: e.target.value })
-                      }
-                    >
-                      <option value="Vacant">Vacant</option>
-                      <option value="Occupied">Occupied</option>
-                    </select>
-                  </div>
-
-                  <div className="col-md-6">
-                    <label className="small fw-bold text-muted">Bedrooms</label>
-                    <MDBInput
-                      type="number"
-                      value={formData.bedrooms}
-                      onChange={(e) =>
-                        setFormData({ ...formData, bedrooms: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="small fw-bold text-muted">
-                      Bathrooms
-                    </label>
-                    <MDBInput
-                      type="number"
-                      value={formData.bathrooms}
-                      onChange={(e) =>
-                        setFormData({ ...formData, bathrooms: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
-
-                  <div className="col-md-12">
-                    <label className="small fw-bold text-muted">
-                      Image URL
-                    </label>
-                    <MDBInput
-                      value={formData.image}
-                      onChange={(e) =>
-                        setFormData({ ...formData, image: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="col-md-12">
-                    <label className="small fw-bold text-muted">
-                      Description
-                    </label>
-                    <MDBInput
-                      textarea
-                      rows={3}
-                      value={formData.description}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          description: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="text-end mt-4">
-                  <MDBBtn
-                    type="button"
-                    color="light"
-                    className="me-2"
-                    onClick={() => setModalOpen(false)}
+      {/* ─── PROPERTY MODAL ───────────────────────────────────── */}
+      {propModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="sticky top-0 bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">
+                  {isEdit ? "Edit Property" : "New Property"}
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Fill in the details below
+                </p>
+              </div>
+              <button
+                onClick={() => setPropModal(false)}
+                className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleFormSubmit} className="p-6 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <MField
+                  label="Property Name"
+                  value={formData.propertyName}
+                  onChange={(v) =>
+                    setFormData((f) => ({ ...f, propertyName: v }))
+                  }
+                />
+                <MField
+                  label="Full Address"
+                  value={formData.location}
+                  onChange={(v) => setFormData((f) => ({ ...f, location: v }))}
+                />
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <MField
+                  label="Rent (₹)"
+                  type="number"
+                  value={formData.rentAmount}
+                  onChange={(v) =>
+                    setFormData((f) => ({ ...f, rentAmount: v }))
+                  }
+                />
+                <MField
+                  label="Bedrooms"
+                  type="number"
+                  value={formData.bedrooms}
+                  onChange={(v) => setFormData((f) => ({ ...f, bedrooms: v }))}
+                />
+                <MField
+                  label="Bathrooms"
+                  type="number"
+                  value={formData.bathrooms}
+                  onChange={(v) => setFormData((f) => ({ ...f, bathrooms: v }))}
+                />
+                <MField
+                  label="Area (sqft)"
+                  type="number"
+                  value={formData.area}
+                  onChange={(v) => setFormData((f) => ({ ...f, area: v }))}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <MField
+                  label="Image URL"
+                  value={formData.image}
+                  onChange={(v) => setFormData((f) => ({ ...f, image: v }))}
+                  required={false}
+                />
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                    Status
+                  </label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) =>
+                      setFormData((f) => ({ ...f, status: e.target.value }))
+                    }
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
                   >
-                    Cancel
-                  </MDBBtn>
-                  <MDBBtn type="submit" style={{ background: "#1a237e" }}>
-                    {isEdit ? "Save" : "Add Property"}
-                  </MDBBtn>
+                    {["Vacant", "Occupied", "Maintenance"].map((o) => (
+                      <option key={o}>{o}</option>
+                    ))}
+                  </select>
                 </div>
-              </form>
-            </MDBModalBody>
-          </MDBModalContent>
-        </MDBModalDialog>
-      </MDBModal>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                  Description
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData((f) => ({ ...f, description: e.target.value }))
+                  }
+                  required
+                  rows={3}
+                  className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 resize-none"
+                />
+              </div>
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setPropModal(false)}
+                  className="px-5 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 active:scale-[0.97] transition-all shadow-lg shadow-emerald-600/20"
+                >
+                  {isEdit ? "Save Changes" : "Add Property"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
-      <style>{`
-        .sidebar-item:hover { background: rgba(255,255,255,0.1) !important; transform: translateX(5px); transition: 0.3s; }
-        .logout-hover:hover { background: rgba(255, 153, 153, 0.1) !important; color: #ff4444 !important; }
-        .fw-black { font-weight: 900; }
-      `}</style>
+      {/* ─── TENANT DETAIL MODAL ──────────────────────────────── */}
+      {tenantModal && selectedTenant && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div className="bg-[#0f172a] px-6 py-5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold text-xl flex-shrink-0">
+                  {(getDisplayName(selectedTenant.tenantId) || "T")
+                    .charAt(0)
+                    .toUpperCase()}
+                </div>
+                <div>
+                  <p className="text-white font-bold text-sm">
+                    {getDisplayName(selectedTenant.tenantId) || "—"}
+                  </p>
+                  <p className="text-slate-400 text-xs truncate max-w-[160px]">
+                    {selectedTenant.tenantId?.email}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setTenantModal(false)}
+                className="text-slate-400 hover:text-white transition-colors p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Details */}
+            <div className="p-5 space-y-0 divide-y divide-slate-100">
+              {[
+                {
+                  label: "Property",
+                  value: selectedTenant.propertyId?.propertyName || "—",
+                },
+                {
+                  label: "Location",
+                  value: selectedTenant.propertyId?.location || "—",
+                },
+                {
+                  label: "Monthly Rent",
+                  value: `₹${Number(selectedTenant.propertyId?.rentAmount || 0).toLocaleString("en-IN")}`,
+                },
+                {
+                  label: "Booking Status",
+                  value: selectedTenant.status || "—",
+                },
+                {
+                  label: "Payment Status",
+                  value: selectedTenant.paymentStatus || "Pending",
+                },
+                {
+                  label: "Booked On",
+                  value: formatDate(selectedTenant.bookingDate) || "—",
+                },
+              ].map(({ label, value }) => (
+                <div
+                  key={label}
+                  className="flex items-center justify-between py-3"
+                >
+                  <span className="text-sm text-slate-500">{label}</span>
+                  <span className="text-sm font-semibold text-slate-800 text-right max-w-[55%] truncate">
+                    {value}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="px-5 pb-5">
+              <button
+                onClick={() => setTenantModal(false)}
+                className="w-full py-2.5 bg-slate-100 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-200 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
+/* ─── Reusable helpers ─────────────────────────────────────────── */
+
+const Th = ({ children, right, center, className = "" }) => (
+  <th
+    className={`px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider
+      ${right ? "text-right" : center ? "text-center" : "text-left"} ${className}`}
+  >
+    {children}
+  </th>
+);
+
+const MField = ({ label, value, onChange, type = "text", required = true }) => (
+  <div>
+    <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+      {label}
+    </label>
+    <input
+      type={type}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      required={required}
+      className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-colors"
+    />
+  </div>
+);
 
 export default ManagerDashboard;

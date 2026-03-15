@@ -441,7 +441,7 @@ const TenantDashboard = () => {
 
     Swal.fire({
       title: "Confirm Payment",
-      text: `Pay ₹${amount.toLocaleString()} for ${propertyName}?`,
+      text: `Pay ₹${amount.toLocaleString("en-IN")} for ${propertyName}?`,
       icon: "question",
       showCancelButton: true,
       confirmButtonColor: "#059669",
@@ -523,6 +523,14 @@ const TenantDashboard = () => {
     if (bal) localStorage.setItem("walletBalance", bal);
     navigate("/");
   };
+
+  /* greeting */
+  const greeting = (() => {
+    const h = new Date().getHours();
+    if (h < 12) return "Good Morning";
+    if (h < 17) return "Good Afternoon";
+    return "Good Evening";
+  })();
 
   /* helpers */
   const latest = bookings[0] ?? null;
@@ -649,7 +657,9 @@ const TenantDashboard = () => {
         <div className="inner page">
           {/* Heading */}
           <div className="ph a1">
-            <h1>My Dashboard</h1>
+            <h1>
+              {greeting}, {userName.split(" ")[0]}!
+            </h1>
             <p>Manage your rental — payments, requests &amp; property info</p>
           </div>
 
@@ -659,7 +669,7 @@ const TenantDashboard = () => {
               <div>
                 <div className="wallet-lbl">Available Balance</div>
                 <div className="wallet-amt">
-                  ₹{walletBalance.toLocaleString()}
+                  ₹{walletBalance.toLocaleString("en-IN")}
                 </div>
                 <div className="wallet-hint">
                   Credits available for rent payments
@@ -744,7 +754,7 @@ const TenantDashboard = () => {
                 style={{ fontFamily: "var(--mono)", fontSize: 17 }}
               >
                 {latest
-                  ? `₹${latest.propertyId?.rentAmount?.toLocaleString()}`
+                  ? `₹${latest.propertyId?.rentAmount?.toLocaleString("en-IN")}`
                   : "₹0"}
               </div>
               <div className="scard-sub">As per rental agreement</div>
@@ -806,7 +816,9 @@ const TenantDashboard = () => {
                           {b.propertyId?.propertyName || "N/A"}
                         </td>
                         <td className="td-r">
-                          ₹{b.propertyId?.rentAmount?.toLocaleString() || 0}
+                          ₹
+                          {b.propertyId?.rentAmount?.toLocaleString("en-IN") ||
+                            0}
                         </td>
                         <td className="td-d">{fmtDate(b.bookingDate)}</td>
                         <td>
