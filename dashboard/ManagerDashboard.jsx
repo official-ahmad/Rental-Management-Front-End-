@@ -250,7 +250,7 @@ const ManagerDashboard = () => {
     }).then((res) => {
       if (res.isConfirmed) {
         localStorage.clear();
-        navigate("/page");
+        navigate("/login", { replace: true });
       }
     });
   }, [navigate]);
