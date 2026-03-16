@@ -504,7 +504,7 @@ const Home = () => {
         {loading ? (
           <div className="text-center py-5">
             <div className="spinner-border text-primary" role="status"></div>
-            <h4 className="mt-3">Loading amazing properties...</h4>
+            <h4 className="mt-3">Properties...</h4>
           </div>
         ) : (
           <MDBRow>
