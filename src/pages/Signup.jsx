@@ -41,8 +41,24 @@ const Signup = () => {
     setLoading(true);
     try {
       await axios.post(API.AUTH.REGISTER, formData);
+
+      const loginResponse = await axios.post(API.AUTH.LOGIN, {
+        email: formData.email,
+        password: formData.password,
+        role: formData.role,
+      });
+
+      const { token, user } = loginResponse.data;
+      localStorage.setItem("token", token);
+      localStorage.setItem("userId", user._id);
+      localStorage.setItem("userName", user.name);
+      localStorage.setItem("userEmail", user.email);
+      localStorage.setItem("userRole", user.role);
+
       toast.success("Account created successfully!");
-      setTimeout(() => navigate("/login"), 2000);
+      setTimeout(() => {
+        navigate(`/${user.role.toLowerCase()}-dashboard`);
+      }, 1000);
     } catch (error) {
       toast.error(
         error.response?.data?.message || "Signup failed. Please try again.",
