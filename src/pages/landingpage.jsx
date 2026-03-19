@@ -59,7 +59,7 @@ const LandingPage = () => {
                 <FaTimes />
               </button>
 
-              <div className="w-20 h-20 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <div className="w-20 h-20 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-6">
                 <FaShieldAlt className="text-white text-3xl" />
               </div>
 
@@ -77,12 +77,12 @@ const LandingPage = () => {
                 value={accessKey}
                 onChange={(e) => setAccessKey(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && verifyPageAccess()}
-                className="w-full px-5 py-4 bg-white/5 border-2 border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/20 transition-all mb-5"
+                className="w-full px-5 py-4 bg-white/5 border-2 border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-emerald-500 focus:shadow-lg focus:shadow-emerald-500/20 transition-all mb-5"
               />
 
               <button
                 onClick={verifyPageAccess}
-                className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-500/40 transition-all"
+                className="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold rounded-xl hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-500/40 transition-all"
               >
                 Verify Access
               </button>
