@@ -56,6 +56,7 @@ export const API = {
   // Home/Properties
   HOME: {
     ALL: `${API_BASE_URL}/api/home/all`,
+    BY_ID: (id) => `${API_BASE_URL}/api/home/${id}`,
   },
 
   // Manager

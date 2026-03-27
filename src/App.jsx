@@ -9,6 +9,7 @@ const Login = lazy(() => import("./pages/Login"));
 const Signup = lazy(() => import("./pages/Signup"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const PropertyDetails = lazy(() => import("./pages/PropertyDetails"));
 const AdminDashboard = lazy(() => import("../dashboard/AdminDashboard"));
 const ManagerDashboard = lazy(() => import("../dashboard/ManagerDashboard"));
 const TenantDashboard = lazy(() => import("../dashboard/TenantDashboard"));
@@ -54,6 +55,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
+          <Route path="/property/:id" element={<PropertyDetails />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/manager-dashboard" element={<ManagerDashboard />} />
           <Route path="/tenant-dashboard" element={<TenantDashboard />} />

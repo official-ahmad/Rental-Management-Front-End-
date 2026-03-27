@@ -45,6 +45,7 @@ const EMPTY_FORM = {
   area: "",
   image: "",
   description: "",
+  category: "Apartment",
   status: "Vacant",
 };
 
@@ -116,6 +117,13 @@ const ManagerDashboard = () => {
     setMobileOpen(false);
   }, []);
 
+  const openPropertyDetails = useCallback(
+    (propertyId) => {
+      navigate(`/property/${propertyId}`);
+    },
+    [navigate],
+  );
+
   /* ── Property modal helpers ──────────────────────────────────*/
   const openPropModal = useCallback((prop = null) => {
     if (prop) {
@@ -130,6 +138,7 @@ const ManagerDashboard = () => {
         area: prop.area || "",
         image: prop.image || "",
         description: prop.description || "",
+        category: prop.category || "Apartment",
         status: prop.status || "Vacant",
       });
     } else {
@@ -149,6 +158,7 @@ const ManagerDashboard = () => {
         bedrooms: Number(formData.bedrooms),
         bathrooms: Number(formData.bathrooms),
         area: Number(formData.area),
+        category: formData.category || "Apartment",
       };
       try {
         if (isEdit) {
@@ -548,6 +558,7 @@ const ManagerDashboard = () => {
                       <>
                         <Th>Property</Th>
                         <Th className="hidden md:table-cell">Location</Th>
+                        <Th className="hidden lg:table-cell">Created By</Th>
                         <Th>Rent / mo</Th>
                         <Th>Status</Th>
                         <Th right>Actions</Th>
@@ -592,7 +603,12 @@ const ManagerDashboard = () => {
                                   className="w-10 h-10 rounded-lg object-cover flex-shrink-0 bg-slate-100"
                                 />
                                 <div>
-                                  <p className="text-sm font-semibold text-slate-800">
+                                  <p
+                                    className="text-sm font-semibold text-slate-800 cursor-pointer hover:text-emerald-700"
+                                    onClick={() =>
+                                      openPropertyDetails(item._id)
+                                    }
+                                  >
                                     {item.propertyName}
                                   </p>
                                   <p className="text-xs text-slate-400">
@@ -609,6 +625,14 @@ const ManagerDashboard = () => {
                                   {item.location}
                                 </span>
                               </div>
+                            </td>
+                            <td className="px-6 py-4 hidden lg:table-cell">
+                              <p className="text-sm font-medium text-slate-700">
+                                {item.createdBy?.name || "Unknown"}
+                              </p>
+                              <p className="text-xs text-slate-400">
+                                {formatDate(item.createdAt)}
+                              </p>
                             </td>
                             <td className="px-6 py-4 text-sm font-semibold text-slate-800">
                               ₹{Number(item.rentAmount).toLocaleString("en-IN")}
@@ -634,6 +658,13 @@ const ManagerDashboard = () => {
                             </td>
                             <td className="px-6 py-4">
                               <div className="flex items-center justify-end gap-1">
+                                <button
+                                  onClick={() => openPropertyDetails(item._id)}
+                                  className="p-2 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all"
+                                  title="View details"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </button>
                                 <button
                                   onClick={() => openPropModal(item)}
                                   className="p-2 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
@@ -756,7 +787,10 @@ const ManagerDashboard = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={5} className="py-16 text-center">
+                      <td
+                        colSpan={activeTab === "properties" ? 6 : 5}
+                        className="py-16 text-center"
+                      >
                         <div className="flex flex-col items-center gap-2">
                           <Building2 className="w-8 h-8 text-slate-200" />
                           <p className="text-slate-400 text-sm">
@@ -843,6 +877,24 @@ const ManagerDashboard = () => {
                   onChange={(v) => setFormData((f) => ({ ...f, image: v }))}
                   required={false}
                 />
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                    Category
+                  </label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) =>
+                      setFormData((f) => ({ ...f, category: e.target.value }))
+                    }
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+                  >
+                    {["Apartment", "House", "Studio", "Villa"].map((o) => (
+                      <option key={o}>{o}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                     Status

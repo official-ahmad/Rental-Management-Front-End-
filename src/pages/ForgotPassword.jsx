@@ -77,7 +77,7 @@ const ForgotPassword = () => {
               <Building2 className="w-5 h-5 text-white" />
             </div>
             <span className="text-white font-bold text-xl tracking-tight">
-              RentManager
+              Rentify.software
             </span>
           </div>
         </div>
@@ -97,7 +97,7 @@ const ForgotPassword = () => {
 
         <div className="relative z-10">
           <p className="text-slate-600 text-xs">
-            &copy; 2026 RentManager. All rights reserved.
+            &copy; 2026 Rentify.software. All rights reserved.
           </p>
         </div>
       </div>
@@ -111,7 +111,7 @@ const ForgotPassword = () => {
               <Building2 className="w-4 h-4 text-white" />
             </div>
             <span className="font-bold text-lg text-slate-800">
-              RentManager
+              Rentify.software
             </span>
           </div>
 

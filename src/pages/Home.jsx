@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { apiClient } from "../config/api";
 import styled from "styled-components";
-import Swal from "sweetalert2";
 import {
   MDBContainer,
   MDBRow,
@@ -13,13 +11,13 @@ import {
   MDBCardImage,
   MDBIcon,
 } from "mdb-react-ui-kit";
-import { API } from "../config/api";
+import { API_BASE_URL, API } from "../config/api";
 
 // --- STYLED COMPONENTS ---
 const HeroSection = styled.div`
   position: relative;
   width: 100%;
-  padding: 120px 0 100px;
+  padding: 24px 0 100px;
   color: white;
   overflow: hidden;
   text-align: center;
@@ -68,17 +66,47 @@ const HeroSection = styled.div`
 `;
 
 const TopNav = styled.div`
-  position: absolute;
-  top: 30px;
-  right: 50px;
+  position: relative;
   z-index: 10;
   display: flex;
-  gap: 20px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 54px;
+  .brand {
+    color: #fff;
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-shadow: 0 2px 8px rgba(15, 23, 42, 0.35);
+  }
+  .brand span {
+    color: #facc15;
+  }
+  .menu-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    font-size: 1.1rem;
+    cursor: pointer;
+  }
+  .nav-links {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
   .nav-btn {
-    padding: 10px 28px;
+    padding: 10px 20px;
     border-radius: 50px;
     font-weight: 600;
-    font-size: 15px;
+    font-size: 14px;
     cursor: pointer;
     transition: all 0.3s ease;
     border: 2px solid #fff;
@@ -114,6 +142,51 @@ const TopNav = styled.div`
   .user-btn:hover {
     background: #fff;
     color: #667eea;
+  }
+  @media (max-width: 1024px) {
+    .brand {
+      font-size: 1.4rem;
+    }
+    .nav-btn {
+      padding: 9px 16px;
+      font-size: 13px;
+    }
+  }
+  @media (max-width: 768px) {
+    margin-bottom: 34px;
+    align-items: center;
+    .brand {
+      font-size: 1.25rem;
+    }
+    .menu-toggle {
+      display: inline-flex;
+    }
+    .nav-links {
+      display: none;
+      position: absolute;
+      top: calc(100% + 10px);
+      right: 0;
+      width: min(240px, 80vw);
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(14px);
+      background: rgba(15, 23, 42, 0.92);
+      box-shadow: 0 16px 34px rgba(15, 23, 42, 0.4);
+      flex-direction: column;
+      gap: 10px;
+      flex-wrap: nowrap;
+      justify-content: flex-start;
+      z-index: 12;
+    }
+    .nav-links.open {
+      display: flex;
+    }
+    .nav-btn {
+      width: 100%;
+      padding: 9px 14px;
+      font-size: 13px;
+    }
   }
 `;
 
@@ -167,6 +240,63 @@ const SearchWrapper = styled.div`
   }
   .searchInput::placeholder {
     color: #999;
+  }
+`;
+
+const FilterPanel = styled.div`
+  margin-top: -34px;
+  margin-bottom: 30px;
+  position: relative;
+  z-index: 12;
+  .filter-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+    padding: 18px;
+  }
+  .filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .filter-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0f172a;
+  }
+  .clear-btn {
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    background: #f8fafc;
+    color: #334155;
+    padding: 7px 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 10px;
+  }
+  select,
+  input {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 10px 12px;
+    color: #0f172a;
+    background: #fff;
+    font-size: 0.9rem;
+    outline: none;
+  }
+  select:focus,
+  input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
   }
 `;
 
@@ -355,7 +485,13 @@ const ButtonWrapper = styled.div`
 
 const Home = () => {
   const navigate = useNavigate();
+  const [isNavOpen, setIsNavOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedLocation, setSelectedLocation] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [maxRent, setMaxRent] = useState("");
+  const [minBedrooms, setMinBedrooms] = useState("all");
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -378,106 +514,119 @@ const Home = () => {
     fetchProperties();
   }, [fetchProperties]);
 
-  const handleRentNow = async (prop) => {
-    if (prop.status === "Occupied") return;
-
-    if (!userId) {
-      Swal.fire({
-        title: "Login Required",
-        text: "Please login first to rent a property!",
-        icon: "warning",
-        confirmButtonColor: "#667eea",
-        borderRadius: "15px",
-      });
-      navigate("/signup");
-      return;
-    }
-
-    Swal.fire({
-      title: "Confirm Request?",
-      text: `Send a rental request for ${prop.propertyName}?`,
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonColor: "#667eea",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, Send Request",
-      borderRadius: "20px",
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          const response = await apiClient.post(API.BOOKINGS.CREATE, {
-            propertyId: prop._id,
-            tenantId: userId,
-          });
-
-          if (response.status === 201) {
-            Swal.fire({
-              title: "Request Sent!",
-              text: "Request submitted successfully. Redirecting...",
-              icon: "success",
-              timer: 2000,
-              showConfirmButton: false,
-              borderRadius: "20px",
-            });
-
-            setTimeout(() => {
-              navigate("/tenant-dashboard");
-            }, 2000);
-          }
-        } catch (error) {
-          Swal.fire({
-            title: "Error!",
-            text: error.response?.data?.message || "Something went wrong.",
-            icon: "error",
-            confirmButtonColor: "#667eea",
-          });
-        }
-      }
-    });
+  const handleRentNow = (propertyId) => {
+    navigate(`/property/${propertyId}`);
   };
+
+  const uniqueLocations = useMemo(() => {
+    return [
+      ...new Set(properties.map((item) => item.location).filter(Boolean)),
+    ];
+  }, [properties]);
+
+  const uniqueCategories = useMemo(() => {
+    return [
+      ...new Set(properties.map((item) => item.category).filter(Boolean)),
+    ];
+  }, [properties]);
 
   // Memoize filtered properties for performance
   const filteredProperties = useMemo(() => {
     return properties.filter(
       (prop) =>
-        prop.propertyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        prop.location?.toLowerCase().includes(searchTerm.toLowerCase()),
+        (prop.propertyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          prop.location?.toLowerCase().includes(searchTerm.toLowerCase())) &&
+        (selectedLocation === "all" || prop.location === selectedLocation) &&
+        (selectedCategory === "all" || prop.category === selectedCategory) &&
+        (selectedStatus === "all" || prop.status === selectedStatus) &&
+        (!maxRent || Number(prop.rentAmount) <= Number(maxRent)) &&
+        (minBedrooms === "all" || Number(prop.bedrooms) >= Number(minBedrooms)),
     );
-  }, [properties, searchTerm]);
+  }, [
+    properties,
+    searchTerm,
+    selectedLocation,
+    selectedCategory,
+    selectedStatus,
+    maxRent,
+    minBedrooms,
+  ]);
+
+  const resetFilters = () => {
+    setSelectedLocation("all");
+    setSelectedCategory("all");
+    setSelectedStatus("all");
+    setMaxRent("");
+    setMinBedrooms("all");
+  };
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 768) {
+        setIsNavOpen(false);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   return (
     <div style={{ backgroundColor: "#f4f7fa", minHeight: "100vh" }}>
       <HeroSection>
-        <TopNav>
-          {userId ? (
-            <button
-              className="nav-btn user-btn"
-              onClick={() =>
-                navigate(`/${userRole?.toLowerCase() || "tenant"}-dashboard`)
-              }
-            >
-              <MDBIcon fas icon="user-circle" className="me-2" />
-              My Dashboard
-            </button>
-          ) : (
-            <>
-              <button
-                className="nav-btn login-btn"
-                onClick={() => navigate("/login")}
-              >
-                Login
-              </button>
-              <button
-                className="nav-btn signup-btn"
-                onClick={() => navigate("/signup")}
-              >
-                Sign Up
-              </button>
-            </>
-          )}
-        </TopNav>
-
         <MDBContainer className="content-box">
+          <TopNav>
+            <div className="brand">
+              Rentify<span>.software</span>
+            </div>
+            <button
+              type="button"
+              className="menu-toggle"
+              aria-label="Toggle navigation menu"
+              aria-expanded={isNavOpen}
+              onClick={() => setIsNavOpen((prev) => !prev)}
+            >
+              <MDBIcon fas icon={isNavOpen ? "times" : "bars"} />
+            </button>
+            <div className={`nav-links ${isNavOpen ? "open" : ""}`}>
+              {userId ? (
+                <button
+                  className="nav-btn user-btn"
+                  onClick={() =>
+                    setIsNavOpen(false) ||
+                    navigate(
+                      `/${userRole?.toLowerCase() || "tenant"}-dashboard`,
+                    )
+                  }
+                >
+                  <MDBIcon fas icon="user-circle" className="me-2" />
+                  My Dashboard
+                </button>
+              ) : (
+                <>
+                  <button
+                    className="nav-btn login-btn"
+                    onClick={() => {
+                      setIsNavOpen(false);
+                      navigate("/login");
+                    }}
+                  >
+                    Login
+                  </button>
+                  <button
+                    className="nav-btn signup-btn"
+                    onClick={() => {
+                      setIsNavOpen(false);
+                      navigate("/signup");
+                    }}
+                  >
+                    Sign Up
+                  </button>
+                </>
+              )}
+            </div>
+          </TopNav>
+
           <h1 className="fw-bold display-4 mb-3">
             Find Your <span style={{ color: "#fff" }}>Dream Space</span>
           </h1>
@@ -501,10 +650,92 @@ const Home = () => {
       </HeroSection>
 
       <MDBContainer>
+        <FilterPanel>
+          <div className="filter-card">
+            <div className="filter-header">
+              <h2 className="filter-title">Find The Right Property Faster</h2>
+              <button
+                type="button"
+                className="clear-btn"
+                onClick={resetFilters}
+              >
+                Clear Filters
+              </button>
+            </div>
+            <div className="grid">
+              <select
+                value={selectedLocation}
+                onChange={(e) => setSelectedLocation(e.target.value)}
+              >
+                <option value="all">All Locations</option>
+                {uniqueLocations.map((location) => (
+                  <option key={location} value={location}>
+                    {location}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+              >
+                <option value="all">All Categories</option>
+                {uniqueCategories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+              >
+                <option value="all">Any Status</option>
+                <option value="Vacant">Vacant</option>
+                <option value="Occupied">Occupied</option>
+              </select>
+
+              <select
+                value={minBedrooms}
+                onChange={(e) => setMinBedrooms(e.target.value)}
+              >
+                <option value="all">Min Bedrooms</option>
+                <option value="1">1+</option>
+                <option value="2">2+</option>
+                <option value="3">3+</option>
+                <option value="4">4+</option>
+              </select>
+
+              <input
+                type="number"
+                min="0"
+                placeholder="Max Monthly Rent"
+                value={maxRent}
+                onChange={(e) => setMaxRent(e.target.value)}
+              />
+            </div>
+          </div>
+        </FilterPanel>
+
         {loading ? (
           <div className="text-center py-5">
             <div className="spinner-border text-primary" role="status"></div>
             <h4 className="mt-3">Loading Properties...</h4>
+          </div>
+        ) : filteredProperties.length === 0 ? (
+          <div
+            style={{
+              background: "#fff",
+              border: "1px solid #e2e8f0",
+              borderRadius: 16,
+              padding: 24,
+              textAlign: "center",
+              color: "#334155",
+              fontWeight: 600,
+            }}
+          >
+            No properties match your current filters.
           </div>
         ) : (
           <MDBRow>
@@ -523,16 +754,30 @@ const Home = () => {
                         </div>
                       )}
                       <MDBCardImage
-                        src={prop.image}
+                        src={
+                          prop.image
+                            ? prop.image.startsWith("http")
+                              ? prop.image
+                              : `${API_BASE_URL}${prop.image}`
+                            : "https://placehold.co/1200x800/e2e8f0/64748b?text=Property"
+                        }
                         position="top"
                         alt={prop.propertyName}
+                        onClick={() => handleRentNow(prop._id)}
+                        style={{ cursor: "pointer" }}
                       />
                       <div className="price-tag">
                         Rs. {prop.rentAmount?.toLocaleString()}
                       </div>
                     </div>
                     <MDBCardBody className="card-body d-flex flex-column">
-                      <h5 className="property-title">{prop.propertyName}</h5>
+                      <h5
+                        className="property-title"
+                        onClick={() => handleRentNow(prop._id)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        {prop.propertyName}
+                      </h5>
                       <p className="location">
                         <MDBIcon
                           fas
@@ -567,7 +812,7 @@ const Home = () => {
                         <ButtonWrapper>
                           <button
                             className="animated-button"
-                            onClick={() => handleRentNow(prop)}
+                            onClick={() => handleRentNow(prop._id)}
                             disabled={prop.status === "Occupied"}
                           >
                             <span className="text">

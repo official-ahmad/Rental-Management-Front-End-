@@ -112,6 +112,13 @@ const AdminDashboard = () => {
     setMobileOpen(false);
   }, []);
 
+  const openPropertyDetails = useCallback(
+    (propertyId) => {
+      navigate(`/property/${propertyId}`);
+    },
+    [navigate],
+  );
+
   /* ── Property modal ──────────────────────────────────────── */
   const handleOpenModal = useCallback(
     (prop = null) => {
@@ -120,7 +127,12 @@ const AdminDashboard = () => {
         setSelectedId(prop._id);
         setFormData({
           ...prop,
-          managerId: prop.owner || prop.managerId || managers[0]?._id || "",
+          managerId:
+            prop.owner ||
+            prop.managerId?._id ||
+            prop.managerId ||
+            managers[0]?._id ||
+            "",
         });
       } else {
         setEditMode(false);
@@ -140,6 +152,7 @@ const AdminDashboard = () => {
       bedrooms: Number(formData.bedrooms),
       bathrooms: Number(formData.bathrooms),
       area: Number(formData.area),
+      managerId: formData.managerId?._id || formData.managerId || null,
     };
     try {
       if (editMode) {
@@ -617,7 +630,8 @@ const AdminDashboard = () => {
                   {properties.slice(0, 5).map((prop) => (
                     <div
                       key={prop._id}
-                      className="px-6 py-3.5 flex items-center justify-between hover:bg-slate-50/50 transition-colors"
+                      className="px-6 py-3.5 flex items-center justify-between hover:bg-slate-50/50 transition-colors cursor-pointer"
+                      onClick={() => openPropertyDetails(prop._id)}
                     >
                       <div className="flex items-center gap-3">
                         <img
@@ -774,6 +788,12 @@ const AdminDashboard = () => {
                             <th className="text-left px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell">
                               Location
                             </th>
+                            <th className="text-left px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden lg:table-cell">
+                              Created By
+                            </th>
+                            <th className="text-left px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden lg:table-cell">
+                              Created On
+                            </th>
                             <th className="text-left px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                               Rent
                             </th>
@@ -847,7 +867,12 @@ const AdminDashboard = () => {
                                     className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
                                   />
                                   <div>
-                                    <p className="text-sm font-semibold text-slate-800">
+                                    <p
+                                      className="text-sm font-semibold text-slate-800 cursor-pointer hover:text-emerald-700"
+                                      onClick={() =>
+                                        openPropertyDetails(item._id)
+                                      }
+                                    >
                                       {item.propertyName}
                                     </p>
                                     <p className="text-xs text-slate-400">
@@ -864,6 +889,17 @@ const AdminDashboard = () => {
                                   </span>
                                 </div>
                               </td>
+                              <td className="px-6 py-4 hidden lg:table-cell">
+                                <p className="text-sm font-medium text-slate-700">
+                                  {item.createdBy?.name || "Unknown"}
+                                </p>
+                                <p className="text-xs text-slate-400">
+                                  {item.createdBy?.role || "—"}
+                                </p>
+                              </td>
+                              <td className="px-6 py-4 hidden lg:table-cell text-sm text-slate-500">
+                                {formatDate(item.createdAt)}
+                              </td>
                               <td className="px-6 py-4 text-sm font-semibold text-slate-800">
                                 ₹
                                 {Number(item.rentAmount || 0).toLocaleString(
@@ -875,6 +911,15 @@ const AdminDashboard = () => {
                               </td>
                               <td className="px-6 py-4">
                                 <div className="flex items-center justify-end gap-1">
+                                  <button
+                                    onClick={() =>
+                                      openPropertyDetails(item._id)
+                                    }
+                                    className="p-2 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all"
+                                    title="View details"
+                                  >
+                                    <ChevronDown className="w-4 h-4 -rotate-90" />
+                                  </button>
                                   <button
                                     onClick={() => handleOpenModal(item)}
                                     className="p-2 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
