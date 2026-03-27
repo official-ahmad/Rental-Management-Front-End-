@@ -200,8 +200,8 @@ const LandingPage = () => {
       </div>
 
       <footer className="mt-20 text-gray-400 text-sm font-medium tracking-wide">
-        &copy; {new Date().getFullYear()} RENTAL SYSTEM MANAGEMENT &bull; ALL
-        RIGHTS RESERVED
+        &copy; {new Date().getFullYear()} RENTIFY.SOFTWARE &bull; ALL RIGHTS
+        RESERVED
       </footer>
     </div>
   );

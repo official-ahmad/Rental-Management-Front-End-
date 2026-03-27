@@ -374,7 +374,7 @@ const AdminDashboard = () => {
                 <Building2 className="w-4 h-4 text-white" />
               </div>
               <span className="font-bold text-sm tracking-tight">
-                RentManager
+                Rentify.software
               </span>
             </div>
           )}

@@ -592,12 +592,12 @@ const Home = () => {
               {userId ? (
                 <button
                   className="nav-btn user-btn"
-                  onClick={() =>
-                    setIsNavOpen(false) ||
+                  onClick={() => {
+                    setIsNavOpen(false);
                     navigate(
                       `/${userRole?.toLowerCase() || "tenant"}-dashboard`,
-                    )
-                  }
+                    );
+                  }}
                 >
                   <MDBIcon fas icon="user-circle" className="me-2" />
                   My Dashboard
