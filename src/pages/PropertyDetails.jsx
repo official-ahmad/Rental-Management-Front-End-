@@ -54,11 +54,10 @@ const PropertyDetails = () => {
 
   const createdByName = useMemo(() => {
     if (!property) return "Unknown";
-    return (
-      property.createdBy?.name ||
-      getDisplayName(property.managerId) ||
-      "Unknown"
-    );
+    if (property.createdBy) {
+      return getDisplayName(property.createdBy) || "Unknown";
+    }
+    return "Unknown";
   }, [property]);
 
   const handleRentNow = async () => {
@@ -363,19 +362,21 @@ const PropertyDetails = () => {
             <div>
               <p style={labelStyle}>Creator Role</p>
               <p style={{ ...valueStyle, marginTop: 6 }}>
-                {property.createdBy?.role || "Unknown"}
+                {property.createdBy?.role || "Property Manager"}
               </p>
             </div>
             <div>
               <p style={labelStyle}>Assigned Manager</p>
               <p style={{ ...valueStyle, marginTop: 6 }}>
-                {getDisplayName(property.managerId) || "Unassigned"}
+                {property.manager?.name ||
+                  (property.managerId ? "Property Manager" : "Unassigned")}
               </p>
             </div>
             <div>
               <p style={labelStyle}>Tenant</p>
               <p style={{ ...valueStyle, marginTop: 6 }}>
-                {getDisplayName(property.tenant) || "No tenant"}
+                {property.tenant?.name ||
+                  (property.tenantId ? "Tenant Assigned" : "Not Assigned Yet")}
               </p>
             </div>
           </div>
