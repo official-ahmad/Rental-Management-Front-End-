@@ -335,9 +335,35 @@ const ManagerDashboard = () => {
   /* ── Render ──────────────────────────────────────────────── */
   return (
     <div className="flex min-h-screen bg-[#f0f4f8]">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        :root {
+          --sh:  0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+          --sh2: 0 4px 16px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.04);
+          --sh3: 0 10px 40px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.05);
+        }
+        @keyframes up { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+        .a1 { animation: up 0.38s ease both; }
+        .a2 { animation: up 0.38s 0.06s ease both; }
+        .a3 { animation: up 0.38s 0.12s ease both; }
+        .a4 { animation: up 0.38s 0.18s ease both; }
+        .a5 { animation: up 0.38s 0.24s ease both; }
+        .card-hover { transition: box-shadow 0.2s, transform 0.2s; }
+        .card-hover:hover { box-shadow: var(--sh2); transform: translateY(-2px); }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+      `}</style>
       <Toaster
         position="top-right"
-        toastOptions={{ style: { borderRadius: 12, fontSize: 13 } }}
+        toastOptions={{
+          style: {
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            borderRadius: 12,
+            fontSize: 13,
+          },
+        }}
       />
 
       {/* Mobile overlay */}
@@ -508,7 +534,7 @@ const ManagerDashboard = () => {
 
         <div className="p-6 space-y-6">
           {/* ── Stats Row ───────────────────────────────────────── */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 a2">
             {[
               {
                 label: "Properties",
@@ -531,7 +557,7 @@ const ManagerDashboard = () => {
             ].map(({ label, value, icon: Icon, color }) => (
               <div
                 key={label}
-                className="bg-white rounded-2xl border border-slate-200/60 p-5 shadow-sm hover:shadow-md transition-shadow"
+                className="bg-white rounded-2xl border border-slate-200/60 p-5 shadow-sm hover:shadow-md transition-shadow card-hover"
               >
                 <div
                   className={`w-10 h-10 rounded-xl flex items-center justify-center ${color} mb-3`}
@@ -549,7 +575,7 @@ const ManagerDashboard = () => {
           </div>
 
           {/* ── Data Table ──────────────────────────────────────── */}
-          <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden a3">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[600px]">
                 <thead>
