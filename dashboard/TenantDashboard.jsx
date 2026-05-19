@@ -571,7 +571,7 @@ const TenantDashboard = () => {
         description: feedbackForm.description,
       });
 
-      toast.success("✅ Feedback Sent Successfully!");
+      toast.success("Feedback Sent Successfully!");
       setFeedbackForm({ name: "", email: "", description: "" });
       setFeedbackOpen(false);
     } catch (error) {
