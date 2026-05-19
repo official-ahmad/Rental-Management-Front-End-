@@ -12,6 +12,7 @@ import {
   FaTimes,
   FaTrashAlt,
   FaWallet,
+  FaComments,
 } from "react-icons/fa";
 import {
   MDBModal,
@@ -396,6 +397,13 @@ const TenantDashboard = () => {
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [bookings, setBookings] = useState([]);
   const [selectedProp, setSelectedProp] = useState(null);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackForm, setFeedbackForm] = useState({
+    name: "",
+    email: "",
+    description: "",
+  });
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
 
   const [walletBalance, setWalletBalance] = useState(() => {
     const s = localStorage.getItem("walletBalance");
@@ -548,6 +556,30 @@ const TenantDashboard = () => {
   const dotClr = (s) =>
     ({ Approved: "#059669", Pending: "#d97706", Paid: "#2563eb" })[s] ??
     "#dc2626";
+
+  const handleFeedbackSubmit = async () => {
+    if (!feedbackForm.name || !feedbackForm.email || !feedbackForm.description) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    try {
+      setFeedbackLoading(true);
+      await apiClient.post(`/api/feedback/submit`, {
+        name: feedbackForm.name,
+        email: feedbackForm.email,
+        description: feedbackForm.description,
+      });
+
+      toast.success("✅ Feedback Sent Successfully!");
+      setFeedbackForm({ name: "", email: "", description: "" });
+      setFeedbackOpen(false);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to send feedback");
+    } finally {
+      setFeedbackLoading(false);
+    }
+  };
 
   /* loading */
   if (loading)
@@ -795,7 +827,16 @@ const TenantDashboard = () => {
           <div className="tcard a4">
             <div className="thead-row">
               <span className="t-title">Booking Requests</span>
-              <span className="t-count">{bookings.length} records</span>
+              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                <span className="t-count">{bookings.length} records</span>
+                <button
+                  className="btn btn-green"
+                  onClick={() => setFeedbackOpen(true)}
+                  style={{ padding: "6px 12px", fontSize: 12 }}
+                >
+                  <FaComments size={11} /> Send Feedback
+                </button>
+              </div>
             </div>
             <div className="t-scroll">
               <table className="bt">
@@ -891,6 +932,115 @@ const TenantDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* ── Feedback Modal ── */}
+      <MDBModal open={feedbackOpen} setOpen={setFeedbackOpen} tabIndex="-1">
+        <MDBModalDialog centered size="lg">
+          <MDBModalContent
+            className="mbox"
+            style={{ border: "none", borderRadius: 18 }}
+          >
+            <MDBModalHeader style={{ border: "none", padding: 0 }}>
+              <div className="mhead">
+                <div className="mhead-ico">
+                  <FaComments />
+                </div>
+                <span className="mhead-ttl">Send Us Your Feedback</span>
+              </div>
+            </MDBModalHeader>
+            <MDBModalBody style={{ padding: "24px" }}>
+              <div style={{ display: "grid", gap: 16 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: "#475569", display: "block", marginBottom: 6 }}>
+                    Your Name
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter your name"
+                    value={feedbackForm.name}
+                    onChange={(e) =>
+                      setFeedbackForm({ ...feedbackForm, name: e.target.value })
+                    }
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 8,
+                      fontSize: 14,
+                      outline: "none",
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: "#475569", display: "block", marginBottom: 6 }}>
+                    Your Email
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="Enter your email"
+                    value={feedbackForm.email}
+                    onChange={(e) =>
+                      setFeedbackForm({ ...feedbackForm, email: e.target.value })
+                    }
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 8,
+                      fontSize: 14,
+                      outline: "none",
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: "#475569", display: "block", marginBottom: 6 }}>
+                    Your Feedback
+                  </label>
+                  <textarea
+                    placeholder="Share your feedback, suggestions, or comments..."
+                    value={feedbackForm.description}
+                    onChange={(e) =>
+                      setFeedbackForm({
+                        ...feedbackForm,
+                        description: e.target.value,
+                      })
+                    }
+                    rows="5"
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 8,
+                      fontSize: 14,
+                      fontFamily: "inherit",
+                      outline: "none",
+                      resize: "vertical",
+                    }}
+                  />
+                </div>
+              </div>
+            </MDBModalBody>
+            <MDBModalFooter style={{ border: "none", padding: 0 }}>
+              <div className="mfoot">
+                <button
+                  className="btn btn-ghost"
+                  onClick={() => setFeedbackOpen(false)}
+                  disabled={feedbackLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="btn btn-green"
+                  onClick={handleFeedbackSubmit}
+                  disabled={feedbackLoading}
+                >
+                  {feedbackLoading ? "Sending..." : "Send Feedback"}
+                </button>
+              </div>
+            </MDBModalFooter>
+          </MDBModalContent>
+        </MDBModalDialog>
+      </MDBModal>
 
       {/* ── Logout Modal ── */}
       <MDBModal open={logoutOpen} setOpen={setLogoutOpen} tabIndex="-1">

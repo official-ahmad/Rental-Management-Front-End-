@@ -47,6 +47,7 @@ const AdminDashboard = () => {
   const [tenants, setTenants] = useState([]);
   const [properties, setProperties] = useState([]);
   const [bookings, setBookings] = useState([]);
+  const [feedbacks, setFeedbacks] = useState([]);
 
   /* ── Block/suspend state (tracks locally until page refresh) */
   const [blockedIds, setBlockedIds] = useState(new Set());
@@ -74,13 +75,15 @@ const AdminDashboard = () => {
   const fetchAllData = useCallback(async () => {
     try {
       setLoading(true);
-      const [propRes, userRes, bookingRes] = await Promise.all([
+      const [propRes, userRes, bookingRes, feedbackRes] = await Promise.all([
         apiClient.get(`${API_BASE}/properties`),
         apiClient.get(`${API_BASE}/users`),
         apiClient.get(API.BOOKINGS.ALL_REQUESTS).catch(() => ({ data: [] })),
+        apiClient.get("/api/feedback/all").catch(() => ({ data: [] })),
       ]);
       setProperties(propRes.data || []);
       setBookings(bookingRes.data || []);
+      setFeedbacks(feedbackRes.data?.feedbacks || feedbackRes.data || []);
       const allUsers = userRes.data || [];
       setManagers(allUsers.filter((u) => u.role?.toLowerCase() === "manager"));
       setTenants(allUsers.filter((u) => u.role?.toLowerCase() === "tenant"));
@@ -246,6 +249,28 @@ const AdminDashboard = () => {
     [API_BASE, blockedIds],
   );
 
+  const handleDeleteFeedback = (id, name) => {
+    Swal.fire({
+      title: "Delete Feedback?",
+      text: `Remove feedback from ${name}?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "Yes, delete",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await apiClient.delete(`/api/feedback/${id}`);
+          toast.success("Feedback deleted!");
+          fetchAllData();
+        } catch {
+          toast.error("Delete failed");
+        }
+      }
+    });
+  };
+
   /* ── Logout ──────────────────────────────────────────────── */
   const handleLogout = () => {
     Swal.fire({
@@ -307,19 +332,20 @@ const AdminDashboard = () => {
     else if (activeTab === "tenants") data = tenants;
     else if (activeTab === "properties") data = properties;
     else if (activeTab === "bookings") data = bookings;
+    else if (activeTab === "feedbacks") data = feedbacks;
     else return [];
 
     const q = searchQuery.toLowerCase().trim();
     if (!q) return data;
     return data.filter(
       (item) =>
-        (getDisplayName(item) || item.propertyName || "")
+        (getDisplayName(item) || item.propertyName || item.name || "")
           .toLowerCase()
           .includes(q) ||
         (item.location || "").toLowerCase().includes(q) ||
         (item.email || "").toLowerCase().includes(q),
     );
-  }, [activeTab, managers, tenants, properties, bookings, searchQuery]);
+  }, [activeTab, managers, tenants, properties, bookings, feedbacks, searchQuery]);
 
   /* ── Nav items ───────────────────────────────────────────── */
   const navItems = [
@@ -329,6 +355,7 @@ const AdminDashboard = () => {
     { id: "tenants", label: "Tenants", icon: Users },
     { id: "bookings", label: "Bookings", icon: ClipboardList },
     { id: "activity", label: "Activity Log", icon: Activity },
+    { id: "feedbacks", label: "Client Feedbacks", icon: Users },
   ];
 
   /* ── Loading ─────────────────────────────────────────────── */
@@ -1065,6 +1092,56 @@ const AdminDashboard = () => {
                 {displayData.length === 0 && (
                   <div className="py-16 text-center">
                     <p className="text-slate-400 text-sm">No records found</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* FEEDBACKS TAB */}
+          {activeTab === "feedbacks" && (
+            <div className="space-y-6">
+              {/* Feedback Cards */}
+              <div className="grid gap-4">
+                {feedbacks.length > 0 ? (
+                  feedbacks.map((feedback) => (
+                    <div
+                      key={feedback._id}
+                      className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6 hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div>
+                          <h4 className="text-lg font-bold text-slate-900">
+                            {feedback.name}
+                          </h4>
+                          <p className="text-sm text-slate-500 mt-1">
+                            {feedback.email}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() =>
+                            handleDeleteFeedback(feedback._id, feedback.name)
+                          }
+                          className="p-2 hover:bg-red-50 rounded-lg transition text-red-600"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+
+                      <p className="text-slate-700 text-sm leading-relaxed mb-3">
+                        {feedback.description}
+                      </p>
+
+                      <p className="text-xs text-slate-400">
+                        {formatDate(feedback.createdAt)}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm py-16 text-center">
+                    <p className="text-slate-400 text-sm">
+                      No feedbacks yet. Testers will appear here when they submit.
+                    </p>
                   </div>
                 )}
               </div>
