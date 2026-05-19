@@ -48,6 +48,7 @@ const AdminDashboard = () => {
   const [properties, setProperties] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [feedbacks, setFeedbacks] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
 
   /* ── Block/suspend state (tracks locally until page refresh) */
   const [blockedIds, setBlockedIds] = useState(new Set());
@@ -75,15 +76,17 @@ const AdminDashboard = () => {
   const fetchAllData = useCallback(async () => {
     try {
       setLoading(true);
-      const [propRes, userRes, bookingRes, feedbackRes] = await Promise.all([
+      const [propRes, userRes, bookingRes, feedbackRes, auditRes] = await Promise.all([
         apiClient.get(`${API_BASE}/properties`),
         apiClient.get(`${API_BASE}/users`),
         apiClient.get(API.BOOKINGS.ALL_REQUESTS).catch(() => ({ data: [] })),
         apiClient.get("/api/feedback/all").catch(() => ({ data: [] })),
+        apiClient.get("/api/audit-logs").catch(() => ({ data: { logs: [] } })),
       ]);
       setProperties(propRes.data || []);
       setBookings(bookingRes.data || []);
       setFeedbacks(feedbackRes.data?.feedbacks || feedbackRes.data || []);
+      setAuditLogs(auditRes.data?.logs || auditRes.data || []);
       const allUsers = userRes.data || [];
       setManagers(allUsers.filter((u) => u.role?.toLowerCase() === "manager"));
       setTenants(allUsers.filter((u) => u.role?.toLowerCase() === "tenant"));
@@ -355,6 +358,7 @@ const AdminDashboard = () => {
     { id: "tenants", label: "Tenants", icon: Users },
     { id: "bookings", label: "Bookings", icon: ClipboardList },
     { id: "activity", label: "Activity Log", icon: Activity },
+    { id: "audit-logs", label: "Audit Logs", icon: Activity },
     { id: "feedbacks", label: "Client Feedbacks", icon: Users },
   ];
 
@@ -512,7 +516,9 @@ const AdminDashboard = () => {
                   ? "Dashboard"
                   : activeTab === "activity"
                     ? "Activity Log"
-                    : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+                    : activeTab === "audit-logs"
+                      ? "Audit Logs"
+                      : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
               </h1>
               <p className="text-xs text-slate-400 mt-0.5">
                 {new Date().toLocaleDateString("en-IN", {
@@ -1123,6 +1129,106 @@ const AdminDashboard = () => {
                     <p className="text-slate-400 text-sm">No records found</p>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* ─── AUDIT LOGS TAB ─────────────────────────────── */}
+          {activeTab === "audit-logs" && (
+            <div className="space-y-4 a3">
+              <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                  <p className="text-sm font-semibold text-slate-700">
+                    System Audit Trail{" "}
+                    <span className="text-slate-400 font-normal">
+                      — {auditLogs.length} records
+                    </span>
+                  </p>
+                  <button
+                    onClick={() => fetchAllData()}
+                    className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
+                    title="Refresh"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[800px]">
+                    <thead>
+                      <tr className="bg-slate-50/80 border-b border-slate-100">
+                        <th className="text-left px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                          Timestamp
+                        </th>
+                        <th className="text-left px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                          User
+                        </th>
+                        <th className="text-left px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                          Action
+                        </th>
+                        <th className="text-left px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                          Entity
+                        </th>
+                        <th className="text-left px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                          Description
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {auditLogs.length > 0 ? (
+                        auditLogs.map((log) => (
+                          <tr
+                            key={log._id}
+                            className="hover:bg-slate-50/50 transition-colors"
+                          >
+                            <td className="px-6 py-4 text-sm text-slate-600">
+                              {new Date(log.createdAt).toLocaleDateString("en-IN")} <br />
+                              <span className="text-xs text-slate-400">
+                                {new Date(log.createdAt).toLocaleTimeString("en-IN")}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <p className="text-sm font-semibold text-slate-800">
+                                {log.userId?.firstName || "Unknown"} {log.userId?.lastName}
+                              </p>
+                              <p className="text-xs text-slate-400">
+                                {log.userRole}
+                              </p>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span
+                                className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold ${
+                                  log.action === "create"
+                                    ? "bg-emerald-50 text-emerald-700"
+                                    : log.action === "update"
+                                      ? "bg-blue-50 text-blue-700"
+                                      : log.action === "delete"
+                                        ? "bg-red-50 text-red-700"
+                                        : "bg-slate-50 text-slate-700"
+                                }`}
+                              >
+                                {log.action?.toUpperCase()}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-sm text-slate-600">
+                              {log.entityType || "—"}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-slate-600 max-w-xs truncate">
+                              {log.description || log.entityName || "—"}
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={5} className="py-16 text-center">
+                            <p className="text-slate-400 text-sm">
+                              No audit logs yet. All admin actions will appear here.
+                            </p>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}

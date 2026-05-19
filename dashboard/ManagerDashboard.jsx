@@ -19,6 +19,8 @@ import {
   ChevronRight,
   Home,
   RefreshCw,
+  DollarSign,
+  Download,
 } from "lucide-react";
 import { API, apiClient } from "../src/config/api";
 import { getDisplayName, formatDate } from "../src/utils/helpers";
@@ -68,6 +70,7 @@ const ManagerDashboard = () => {
   const [properties, setProperties] = useState([]);
   const [requests, setRequests] = useState([]);
   const [activeTenants, setActiveTenants] = useState([]);
+  const [payments, setPayments] = useState([]);
 
   /* ── Property modal ───────────────────────────────────────── */
   const [propModal, setPropModal] = useState(false);
@@ -86,11 +89,13 @@ const ManagerDashboard = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [propRes, bookRes] = await Promise.all([
+      const [propRes, bookRes, payRes] = await Promise.all([
         apiClient.get(`${API_BASE}/properties`),
         apiClient.get(API.BOOKINGS.ALL_REQUESTS),
+        apiClient.get("/api/payments").catch(() => ({ data: [] })),
       ]);
       setProperties(propRes.data || []);
+      setPayments(payRes.data || []);
       const all = bookRes.data || [];
       setRequests(all.filter((r) => r.status === "Pending"));
       setActiveTenants(all.filter((r) => r.status === "Approved"));
@@ -272,7 +277,9 @@ const ManagerDashboard = () => {
         ? requests
         : activeTab === "tenants"
           ? activeTenants
-          : properties;
+          : activeTab === "payments"
+            ? payments
+            : properties;
 
     const q = searchTerm.toLowerCase().trim();
     if (!q) return src;
@@ -291,7 +298,7 @@ const ManagerDashboard = () => {
       const email = (item.email || item.tenantId?.email || "").toLowerCase();
       return name.includes(q) || loc.includes(q) || email.includes(q);
     });
-  }, [activeTab, searchTerm, properties, requests, activeTenants]);
+  }, [activeTab, searchTerm, properties, requests, activeTenants, payments]);
 
   /* ── Nav items ───────────────────────────────────────────── */
   const navItems = useMemo(
@@ -315,8 +322,14 @@ const ManagerDashboard = () => {
         icon: Users,
         count: activeTenants.length,
       },
+      {
+        id: "payments",
+        label: "Payments",
+        icon: DollarSign,
+        count: payments.length,
+      },
     ],
-    [properties.length, requests.length, activeTenants.length],
+    [properties.length, requests.length, activeTenants.length, payments.length],
   );
 
   /* ── Loading screen ──────────────────────────────────────── */
@@ -474,7 +487,9 @@ const ManagerDashboard = () => {
                   ? "Property Inventory"
                   : activeTab === "requests"
                     ? "Booking Requests"
-                    : "Active Tenants"}
+                    : activeTab === "payments"
+                      ? "Payment History"
+                      : "Active Tenants"}
               </h1>
               <p className="text-xs text-slate-400 mt-0.5">
                 {new Date().toLocaleDateString("en-IN", {
@@ -604,6 +619,16 @@ const ManagerDashboard = () => {
                         <Th className="hidden md:table-cell">Property</Th>
                         <Th className="hidden sm:table-cell">Rent</Th>
                         <Th right>Details</Th>
+                      </>
+                    )}
+                    {activeTab === "payments" && (
+                      <>
+                        <Th>Tenant</Th>
+                        <Th className="hidden md:table-cell">Property</Th>
+                        <Th>Amount</Th>
+                        <Th className="hidden sm:table-cell">Date</Th>
+                        <Th center>Status</Th>
+                        <Th right>Receipt</Th>
                       </>
                     )}
                   </tr>
@@ -809,12 +834,71 @@ const ManagerDashboard = () => {
                             </td>
                           </>
                         )}
+
+                        {/* ── Payment rows ── */}
+                        {activeTab === "payments" && (
+                          <>
+                            <td className="px-6 py-4">
+                              <p className="text-sm font-semibold text-slate-800">
+                                {getDisplayName(item.tenantId) || "—"}
+                              </p>
+                              <p className="text-xs text-slate-400">
+                                {item.tenantId?.email}
+                              </p>
+                            </td>
+                            <td className="px-6 py-4 hidden md:table-cell">
+                              <p className="text-sm font-medium text-slate-700">
+                                {item.propertyId?.propertyName || "—"}
+                              </p>
+                              <p className="text-xs text-slate-400">
+                                {item.propertyId?.location}
+                              </p>
+                            </td>
+                            <td className="px-6 py-4 text-sm font-semibold text-slate-800">
+                              ₹{Number(item.amount || 0).toLocaleString("en-IN")}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-slate-400 hidden sm:table-cell">
+                              {formatDate(item.createdAt)}
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700">
+                                {item.status === "completed" ? "Paid" : "Pending"}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    const response = await apiClient.get(
+                                      `/payments/${item._id}/download-receipt`,
+                                      { responseType: "blob" }
+                                    );
+                                    const url = window.URL.createObjectURL(new Blob([response.data]));
+                                    const link = document.createElement("a");
+                                    link.href = url;
+                                    link.setAttribute("download", `receipt-${item.transactionId}.pdf`);
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    link.parentNode.removeChild(link);
+                                    window.URL.revokeObjectURL(url);
+                                  } catch (error) {
+                                    toast.error("Failed to download receipt");
+                                  }
+                                }}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-600 rounded-lg text-xs font-semibold hover:bg-blue-200 transition-colors ml-auto"
+                                title="Download Receipt"
+                              >
+                                <Download className="w-3.5 h-3.5" /> Receipt
+                              </button>
+                            </td>
+                          </>
+                        )}
                       </tr>
                     ))
                   ) : (
                     <tr>
                       <td
-                        colSpan={activeTab === "properties" ? 6 : 5}
+                        colSpan={activeTab === "properties" ? 6 : activeTab === "payments" ? 6 : 5}
                         className="py-16 text-center"
                       >
                         <div className="flex flex-col items-center gap-2">
