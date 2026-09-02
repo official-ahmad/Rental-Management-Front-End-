@@ -25,19 +25,6 @@ import {
 import { API, apiClient } from "../src/config/api";
 import { getDisplayName, formatDate } from "../src/utils/helpers";
 
-/* ─── Status cycle config ─────────────────────────────────────── */
-const STATUS_CYCLE = {
-  Vacant: "Occupied",
-  Occupied: "Maintenance",
-  Maintenance: "Vacant",
-};
-const STATUS_STYLE = {
-  Vacant: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-  Occupied: "bg-amber-50   text-amber-700   border border-amber-200",
-  Maintenance: "bg-slate-100  text-slate-600   border border-slate-200",
-};
-
-/* ─── Empty property form ─────────────────────────────────────── */
 const EMPTY_FORM = {
   propertyName: "",
   location: "",
@@ -51,71 +38,19 @@ const EMPTY_FORM = {
   status: "Vacant",
 };
 
-/* ══════════════════════════════════════════════════════════════ */
-const ManagerDashboard = () => {
-  const navigate = useNavigate();
-  const role = localStorage.getItem("userRole");
-  const managerName = localStorage.getItem("userName") || "Manager";
-  const managerEmail = localStorage.getItem("userEmail") || "";
-  const API_BASE = API.MANAGER.BASE;
-
-  /* ── UI state ─────────────────────────────────────────────── */
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("properties");
   const [searchTerm, setSearchTerm] = useState("");
 
-  /* ── Data state ───────────────────────────────────────────── */
-  const [properties, setProperties] = useState([]);
-  const [requests, setRequests] = useState([]);
-  const [activeTenants, setActiveTenants] = useState([]);
-  const [payments, setPayments] = useState([]);
-
-  /* ── Property modal ───────────────────────────────────────── */
   const [propModal, setPropModal] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [editId, setEditId] = useState(null);
 
-  /* ── Tenant detail modal ──────────────────────────────────── */
-  const [tenantModal, setTenantModal] = useState(false);
-  const [selectedTenant, setSelectedTenant] = useState(null);
-
-  /* ── Status toggle loading set ────────────────────────────── */
   const [statusBusy, setStatusBusy] = useState(new Set());
 
-  /* ── Fetch all data ───────────────────────────────────────── */
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [propRes, bookRes, payRes] = await Promise.all([
-        apiClient.get(`${API_BASE}/properties`),
-        apiClient.get(API.BOOKINGS.ALL_REQUESTS),
-        apiClient.get("/api/payments").catch(() => ({ data: [] })),
-      ]);
-      setProperties(propRes.data || []);
-      setPayments(payRes.data || []);
-      const all = bookRes.data || [];
-      setRequests(all.filter((r) => r.status === "Pending"));
-      setActiveTenants(all.filter((r) => r.status === "Approved"));
-    } catch {
-      toast.error("Failed to load data. Check your connection.");
-    } finally {
-      setLoading(false);
-    }
-  }, [API_BASE]);
-
-  useEffect(() => {
-    if (!role || role.toLowerCase() !== "manager") {
-      toast.error("Access denied. Manager only.");
-      navigate("/page", { replace: true });
-    } else {
-      fetchData();
-    }
-  }, [role, navigate, fetchData]);
-
-  /* ── Tab change (closes mobile sidebar) ────────────────────── */
   const handleTabChange = useCallback((id) => {
     setActiveTab(id);
     setSearchTerm("");
@@ -129,60 +64,6 @@ const ManagerDashboard = () => {
     [navigate],
   );
 
-  /* ── Property modal helpers ──────────────────────────────────*/
-  const openPropModal = useCallback((prop = null) => {
-    if (prop) {
-      setIsEdit(true);
-      setEditId(prop._id);
-      setFormData({
-        propertyName: prop.propertyName || "",
-        location: prop.location || "",
-        rentAmount: prop.rentAmount || "",
-        bedrooms: prop.bedrooms || "",
-        bathrooms: prop.bathrooms || "",
-        area: prop.area || "",
-        image: prop.image || "",
-        description: prop.description || "",
-        category: prop.category || "Apartment",
-        status: prop.status || "Vacant",
-      });
-    } else {
-      setIsEdit(false);
-      setEditId(null);
-      setFormData(EMPTY_FORM);
-    }
-    setPropModal(true);
-  }, []);
-
-  const handleFormSubmit = useCallback(
-    async (e) => {
-      e.preventDefault();
-      const payload = {
-        ...formData,
-        rentAmount: Number(formData.rentAmount),
-        bedrooms: Number(formData.bedrooms),
-        bathrooms: Number(formData.bathrooms),
-        area: Number(formData.area),
-        category: formData.category || "Apartment",
-      };
-      try {
-        if (isEdit) {
-          await apiClient.put(`${API_BASE}/update/${editId}`, payload);
-          toast.success("Property updated!");
-        } else {
-          await apiClient.post(`${API_BASE}/add`, payload);
-          toast.success("Property added!");
-        }
-        setPropModal(false);
-        fetchData();
-      } catch (err) {
-        toast.error(err.response?.data?.error || "Operation failed.");
-      }
-    },
-    [formData, isEdit, editId, API_BASE, fetchData],
-  );
-
-  /* ── Property delete ─────────────────────────────────────── */
   const handleDelete = useCallback(
     (id) => {
       Swal.fire({
@@ -208,37 +89,6 @@ const ManagerDashboard = () => {
     [API_BASE, fetchData],
   );
 
-  /* ── Inline status toggle ────────────────────────────────── */
-  const handleStatusToggle = useCallback(
-    async (prop) => {
-      const next = STATUS_CYCLE[prop.status] || "Vacant";
-      setStatusBusy((s) => new Set(s).add(prop._id));
-      try {
-        await apiClient.put(`${API_BASE}/update/${prop._id}`, {
-          ...prop,
-          rentAmount: Number(prop.rentAmount),
-          bedrooms: Number(prop.bedrooms),
-          bathrooms: Number(prop.bathrooms),
-          status: next,
-        });
-        setProperties((prev) =>
-          prev.map((p) => (p._id === prop._id ? { ...p, status: next } : p)),
-        );
-        toast.success(`Status set to ${next}`);
-      } catch {
-        toast.error("Status update failed.");
-      } finally {
-        setStatusBusy((s) => {
-          const n = new Set(s);
-          n.delete(prop._id);
-          return n;
-        });
-      }
-    },
-    [API_BASE],
-  );
-
-  /* ── Booking action ──────────────────────────────────────── */
   const handleBookingAction = useCallback(
     async (bookingId, status) => {
       try {
@@ -252,25 +102,6 @@ const ManagerDashboard = () => {
     [fetchData],
   );
 
-  /* ── Logout ──────────────────────────────────────────────── */
-  const handleLogout = useCallback(() => {
-    Swal.fire({
-      title: "Sign out?",
-      text: "You will be redirected to the login page.",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonColor: "#0f172a",
-      cancelButtonColor: "#64748b",
-      confirmButtonText: "Sign out",
-    }).then((res) => {
-      if (res.isConfirmed) {
-        localStorage.clear();
-        navigate("/login", { replace: true });
-      }
-    });
-  }, [navigate]);
-
-  /* ── Filtered list for active tab ───────────────────────── */
   const filteredList = useMemo(() => {
     const src =
       activeTab === "requests"
@@ -300,39 +131,6 @@ const ManagerDashboard = () => {
     });
   }, [activeTab, searchTerm, properties, requests, activeTenants, payments]);
 
-  /* ── Nav items ───────────────────────────────────────────── */
-  const navItems = useMemo(
-    () => [
-      {
-        id: "properties",
-        label: "Inventory",
-        icon: Building2,
-        count: properties.length,
-      },
-      {
-        id: "requests",
-        label: "Requests",
-        icon: Inbox,
-        count: requests.length,
-        badge: requests.length > 0,
-      },
-      {
-        id: "tenants",
-        label: "Tenants",
-        icon: Users,
-        count: activeTenants.length,
-      },
-      {
-        id: "payments",
-        label: "Payments",
-        icon: DollarSign,
-        count: payments.length,
-      },
-    ],
-    [properties.length, requests.length, activeTenants.length, payments.length],
-  );
-
-  /* ── Loading screen ──────────────────────────────────────── */
   if (loading)
     return (
       <div className="min-h-screen bg-[#f0f4f8] flex items-center justify-center">
@@ -345,41 +143,6 @@ const ManagerDashboard = () => {
       </div>
     );
 
-  /* ── Render ──────────────────────────────────────────────── */
-  return (
-    <div className="flex min-h-screen bg-[#f0f4f8]">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        :root {
-          --sh:  0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-          --sh2: 0 4px 16px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.04);
-          --sh3: 0 10px 40px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.05);
-        }
-        @keyframes up { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
-        .a1 { animation: up 0.38s ease both; }
-        .a2 { animation: up 0.38s 0.06s ease both; }
-        .a3 { animation: up 0.38s 0.12s ease both; }
-        .a4 { animation: up 0.38s 0.18s ease both; }
-        .a5 { animation: up 0.38s 0.24s ease both; }
-        .card-hover { transition: box-shadow 0.2s, transform 0.2s; }
-        .card-hover:hover { box-shadow: var(--sh2); transform: translateY(-2px); }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-      `}</style>
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          style: {
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
-            borderRadius: 12,
-            fontSize: 13,
-          },
-        }}
-      />
-
-      {/* Mobile overlay */}
       {mobileOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
@@ -648,7 +411,7 @@ const ManagerDashboard = () => {
                                 <img
                                   src={
                                     item.image ||
-                                    "https://placehold.co/40x40/f1f5f9/94a3b8?text=P"
+                                    "https://via.placeholder.com/
                                   }
                                   alt=""
                                   className="w-10 h-10 rounded-lg object-cover flex-shrink-0 bg-slate-100"
@@ -1140,30 +903,3 @@ const ManagerDashboard = () => {
   );
 };
 
-/* ─── Reusable helpers ─────────────────────────────────────────── */
-
-const Th = ({ children, right, center, className = "" }) => (
-  <th
-    className={`px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider
-      ${right ? "text-right" : center ? "text-center" : "text-left"} ${className}`}
-  >
-    {children}
-  </th>
-);
-
-const MField = ({ label, value, onChange, type = "text", required = true }) => (
-  <div>
-    <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-      {label}
-    </label>
-    <input
-      type={type}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      required={required}
-      className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-colors"
-    />
-  </div>
-);
-
-export default ManagerDashboard;

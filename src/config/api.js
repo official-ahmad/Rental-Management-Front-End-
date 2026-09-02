@@ -1,16 +1,7 @@
-// ============================================
-// API Configuration — auto-detects environment
-// ============================================
-
-// In development: create .env with VITE_API_URL=http://localhost:8000
-// In production (Vercel): set VITE_API_URL in environment variables
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  "https://rental-management-back-end.onrender.com";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 export { API_BASE_URL };
 
-// Axios instance with automatic auth headers
 import axios from "axios";
 
 export const apiClient = axios.create({ baseURL: API_BASE_URL });
@@ -34,15 +25,12 @@ apiClient.interceptors.response.use(
   },
 );
 
-// API Endpoints
 export const API = {
-  // Auth
   AUTH: {
     LOGIN: `${API_BASE_URL}/api/auth/login`,
     REGISTER: `${API_BASE_URL}/api/auth/register`,
   },
 
-  // Bookings
   BOOKINGS: {
     CREATE: `${API_BASE_URL}/api/bookings/create`,
     REQUEST: `${API_BASE_URL}/api/bookings/request`,
@@ -53,13 +41,11 @@ export const API = {
     CANCEL: (bookingId) => `${API_BASE_URL}/api/bookings/cancel/${bookingId}`,
   },
 
-  // Home/Properties
   HOME: {
     ALL: `${API_BASE_URL}/api/home/all`,
     BY_ID: (id) => `${API_BASE_URL}/api/home/${id}`,
   },
 
-  // Manager
   MANAGER: {
     BASE: `${API_BASE_URL}/api/manager`,
     PROPERTIES: `${API_BASE_URL}/api/manager/properties`,

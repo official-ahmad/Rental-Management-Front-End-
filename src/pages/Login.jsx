@@ -26,7 +26,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Admin modal state
+
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [adminAccessKey, setAdminAccessKey] = useState("");
   const [adminEmail, setAdminEmail] = useState("");

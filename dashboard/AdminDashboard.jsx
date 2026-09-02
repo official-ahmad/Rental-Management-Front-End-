@@ -28,51 +28,14 @@ import {
 import { API, apiClient } from "../src/config/api";
 import { getDisplayName, formatDate } from "../src/utils/helpers";
 
-/* ══════════════════════════════════════════════════════════════ */
-const AdminDashboard = () => {
-  const navigate = useNavigate();
-  const role = localStorage.getItem("userRole");
-  const adminName = localStorage.getItem("userName") || "Super Admin";
-  const API_BASE = API.MANAGER.BASE;
-
-  /* ── UI state ─────────────────────────────────────────────── */
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
   const [searchQuery, setSearchQuery] = useState("");
 
-  /* ── Data state ───────────────────────────────────────────── */
-  const [managers, setManagers] = useState([]);
-  const [tenants, setTenants] = useState([]);
-  const [properties, setProperties] = useState([]);
-  const [bookings, setBookings] = useState([]);
-  const [feedbacks, setFeedbacks] = useState([]);
-  const [auditLogs, setAuditLogs] = useState([]);
-
-  /* ── Block/suspend state (tracks locally until page refresh) */
   const [blockedIds, setBlockedIds] = useState(new Set());
 
-  /* ── Property form ───────────────────────────────────────── */
-  const initialFormState = {
-    propertyName: "",
-    location: "",
-    rentAmount: "",
-    bedrooms: "",
-    bathrooms: "",
-    area: "",
-    image: "",
-    description: "",
-    category: "Apartment",
-    status: "Vacant",
-    managerId: "",
-  };
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [selectedId, setSelectedId] = useState(null);
-  const [formData, setFormData] = useState(initialFormState);
-
-  /* ── Fetch all data ───────────────────────────────────────── */
   const fetchAllData = useCallback(async () => {
     try {
       setLoading(true);
@@ -90,28 +53,6 @@ const AdminDashboard = () => {
       const allUsers = userRes.data || [];
       setManagers(allUsers.filter((u) => u.role?.toLowerCase() === "manager"));
       setTenants(allUsers.filter((u) => u.role?.toLowerCase() === "tenant"));
-      /* Restore block state from user records if API surfaces isBlocked */
-      const serverBlocked = allUsers
-        .filter((u) => u.isBlocked)
-        .map((u) => u._id);
-      if (serverBlocked.length) setBlockedIds(new Set(serverBlocked));
-    } catch {
-      toast.error("Failed to sync data. Check your connection.");
-    } finally {
-      setLoading(false);
-    }
-  }, [API_BASE]);
-
-  useEffect(() => {
-    if (!role || role.toLowerCase() !== "admin") {
-      toast.error("Access denied. Admin only!");
-      navigate("/page", { replace: true });
-    } else {
-      fetchAllData();
-    }
-  }, [role, navigate, fetchAllData]);
-
-  /* ── Tab change (closes mobile sidebar) ────────────────────── */
   const handleTabChange = useCallback((id) => {
     setActiveTab(id);
     setSearchQuery("");
@@ -125,79 +66,6 @@ const AdminDashboard = () => {
     [navigate],
   );
 
-  /* ── Property modal ──────────────────────────────────────── */
-  const handleOpenModal = useCallback(
-    (prop = null) => {
-      if (prop) {
-        setEditMode(true);
-        setSelectedId(prop._id);
-        setFormData({
-          ...prop,
-          managerId:
-            prop.owner ||
-            prop.managerId?._id ||
-            prop.managerId ||
-            managers[0]?._id ||
-            "",
-        });
-      } else {
-        setEditMode(false);
-        setFormData({ ...initialFormState, managerId: managers[0]?._id || "" });
-      }
-      setModalOpen(true);
-    },
-    [managers],
-  ); // eslint-disable-line
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const payload = {
-      ...formData,
-      name: formData.propertyName,
-      rentAmount: Number(formData.rentAmount),
-      bedrooms: Number(formData.bedrooms),
-      bathrooms: Number(formData.bathrooms),
-      area: Number(formData.area),
-      managerId: formData.managerId?._id || formData.managerId || null,
-    };
-    try {
-      if (editMode) {
-        await apiClient.put(`${API_BASE}/update/${selectedId}`, payload);
-        toast.success("Property updated!");
-      } else {
-        await apiClient.post(`${API_BASE}/add`, payload);
-        toast.success("Property added!");
-      }
-      setModalOpen(false);
-      fetchAllData();
-    } catch (err) {
-      toast.error(err.response?.data?.error || "Error saving property");
-    }
-  };
-
-  const handleDelete = (id) => {
-    Swal.fire({
-      title: "Delete Property?",
-      text: "This action cannot be undone.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#ef4444",
-      cancelButtonColor: "#64748b",
-      confirmButtonText: "Yes, delete",
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          await apiClient.delete(`${API_BASE}/delete/${id}`);
-          toast.success("Property deleted!");
-          fetchAllData();
-        } catch {
-          toast.error("Delete failed");
-        }
-      }
-    });
-  };
-
-  /* ── Delete user ─────────────────────────────────────────── */
   const handleDeleteUser = useCallback(
     (id, name) => {
       Swal.fire({
@@ -223,33 +91,23 @@ const AdminDashboard = () => {
     [API_BASE, fetchAllData],
   );
 
-  /* ── Block / unblock user ────────────────────────────────── */
   const handleBlockUser = useCallback(
-    async (id, name) => {
-      const isBlocked = blockedIds.has(id);
+    async (id, name, isBlocked) => {
       try {
-        await apiClient.patch(`${API_BASE}/users/${id}/block`, {
-          blocked: !isBlocked,
-        });
-        setBlockedIds((prev) => {
-          const next = new Set(prev);
-          isBlocked ? next.delete(id) : next.add(id);
-          return next;
-        });
-        toast.success(`${name} ${isBlocked ? "unblocked" : "suspended"}`);
-      } catch {
-        /* Graceful fallback — update UI state even if endpoint absent */
+        await apiClient.patch(`${API_BASE}/users/${id}/block`);
         setBlockedIds((prev) => {
           const next = new Set(prev);
           isBlocked ? next.delete(id) : next.add(id);
           return next;
         });
         toast.success(
-          `${name} ${isBlocked ? "unblocked" : "suspended"} (local)`,
+          `${name} ${isBlocked ? "unblocked" : "suspended"}`,
         );
+      } catch {
+        toast.error("Failed to update user status");
       }
     },
-    [API_BASE, blockedIds],
+    [API_BASE],
   );
 
   const handleDeleteFeedback = (id, name) => {
@@ -274,26 +132,6 @@ const AdminDashboard = () => {
     });
   };
 
-  /* ── Logout ──────────────────────────────────────────────── */
-  const handleLogout = () => {
-    Swal.fire({
-      title: "Logout?",
-      text: "You'll need to sign in again.",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonColor: "#059669",
-      cancelButtonColor: "#64748b",
-      confirmButtonText: "Logout",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        localStorage.clear();
-        toast.success("Logged out!");
-        navigate("/page");
-      }
-    });
-  };
-
-  /* ── Computed stats ──────────────────────────────────────── */
   const stats = useMemo(() => {
     const occupied = properties.filter((p) => p.status === "Occupied");
     const totalRevenue = occupied.reduce((s, p) => s + (p.rentAmount || 0), 0);
@@ -307,28 +145,6 @@ const AdminDashboard = () => {
     return { totalRevenue, occupancyRate, pendingBookings };
   }, [properties, bookings]);
 
-  /* ── Activity log (derived from bookings) ────────────────── */
-  const activityLogs = useMemo(
-    () =>
-      [...bookings]
-        .sort(
-          (a, b) =>
-            new Date(b.createdAt || b.bookingDate) -
-            new Date(a.createdAt || a.bookingDate),
-        )
-        .slice(0, 50)
-        .map((b) => ({
-          id: b._id,
-          tenant: getDisplayName(b.tenantId) || b.tenantId || "Unknown",
-          property: b.propertyId?.propertyName || "—",
-          action: b.status,
-          payment: b.paymentStatus || "—",
-          date: b.bookingDate || b.createdAt,
-        })),
-    [bookings],
-  );
-
-  /* ── Filtered table data ─────────────────────────────────── */
   const displayData = useMemo(() => {
     let data = [];
     if (activeTab === "managers") data = managers;
@@ -350,19 +166,6 @@ const AdminDashboard = () => {
     );
   }, [activeTab, managers, tenants, properties, bookings, feedbacks, searchQuery]);
 
-  /* ── Nav items ───────────────────────────────────────────── */
-  const navItems = [
-    { id: "overview", label: "Overview", icon: LayoutDashboard },
-    { id: "properties", label: "Properties", icon: Building2 },
-    { id: "managers", label: "Managers", icon: UserCog },
-    { id: "tenants", label: "Tenants", icon: Users },
-    { id: "bookings", label: "Bookings", icon: ClipboardList },
-    { id: "activity", label: "Activity Log", icon: Activity },
-    { id: "audit-logs", label: "Audit Logs", icon: Activity },
-    { id: "feedbacks", label: "Client Feedbacks", icon: Users },
-  ];
-
-  /* ── Loading ─────────────────────────────────────────────── */
   if (loading)
     return (
       <div className="min-h-screen bg-[#f0f4f8] flex items-center justify-center">
@@ -375,41 +178,6 @@ const AdminDashboard = () => {
       </div>
     );
 
-  /* ── Render ──────────────────────────────────────────────── */
-  return (
-    <div className="flex min-h-screen bg-[#f0f4f8]">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        :root {
-          --sh:  0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-          --sh2: 0 4px 16px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.04);
-          --sh3: 0 10px 40px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.05);
-        }
-        @keyframes up { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
-        .a1 { animation: up 0.38s ease both; }
-        .a2 { animation: up 0.38s 0.06s ease both; }
-        .a3 { animation: up 0.38s 0.12s ease both; }
-        .a4 { animation: up 0.38s 0.18s ease both; }
-        .a5 { animation: up 0.38s 0.24s ease both; }
-        .card-hover { transition: box-shadow 0.2s, transform 0.2s; }
-        .card-hover:hover { box-shadow: var(--sh2); transform: translateY(-2px); }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-      `}</style>
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          style: {
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
-            borderRadius: 12,
-            fontSize: 13,
-          },
-        }}
-      />
-
-      {/* Mobile overlay */}
       {mobileOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
@@ -699,7 +467,7 @@ const AdminDashboard = () => {
                         <img
                           src={
                             prop.image ||
-                            "https://placehold.co/40x40/f1f5f9/94a3b8?text=P"
+                            "https://via.placeholder.com///via.placeholder.com/60x60?text=No+Image"
                           }
                           alt=""
                           className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
@@ -923,7 +691,7 @@ const AdminDashboard = () => {
                                   <img
                                     src={
                                       item.image ||
-                                      "https://placehold.co/40x40/f1f5f9/94a3b8?text=P"
+                                      "https://via.placeholder.com/40x40?text=No+Image"
                                     }
                                     alt=""
                                     className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
@@ -1472,68 +1240,3 @@ const AdminDashboard = () => {
   );
 };
 
-/* ─── Reusable components ──────────────────────────────────────── */
-
-const StatCard = ({ icon: Icon, label, value, color }) => {
-  const colors = {
-    blue: "bg-blue-50    text-blue-600",
-    violet: "bg-violet-50  text-violet-600",
-    emerald: "bg-emerald-50 text-emerald-600",
-    amber: "bg-amber-50   text-amber-600",
-  };
-  return (
-    <div className="bg-white rounded-2xl border border-slate-200/60 p-5 shadow-sm hover:shadow-md transition-shadow card-hover">
-      <div
-        className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${colors[color]}`}
-      >
-        <Icon className="w-5 h-5" />
-      </div>
-      <p className="text-2xl font-extrabold text-slate-900 mb-0.5">{value}</p>
-      <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">
-        {label}
-      </p>
-    </div>
-  );
-};
-
-const StatusBadge = ({ status }) => {
-  const map = {
-    Vacant: "bg-emerald-50 text-emerald-700",
-    Occupied: "bg-amber-50   text-amber-700",
-    "Under Maintenance": "bg-slate-100  text-slate-600",
-    Pending: "bg-amber-50   text-amber-700",
-    Approved: "bg-emerald-50 text-emerald-700",
-    Rejected: "bg-red-50     text-red-700",
-    Paid: "bg-emerald-50 text-emerald-700",
-  };
-  return (
-    <span
-      className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold ${map[status] || "bg-slate-100 text-slate-500"}`}
-    >
-      {status}
-    </span>
-  );
-};
-
-const ModalInput = ({
-  label,
-  value,
-  onChange,
-  type = "text",
-  required = true,
-}) => (
-  <div>
-    <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-      {label}
-    </label>
-    <input
-      type={type}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      required={required}
-      className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-colors"
-    />
-  </div>
-);
-
-export default AdminDashboard;

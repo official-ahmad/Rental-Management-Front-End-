@@ -14,7 +14,6 @@ import {
 } from "mdb-react-ui-kit";
 import { API_BASE_URL, API } from "../config/api";
 
-// --- STYLED COMPONENTS ---
 const HeroSection = styled.div`
   position: relative;
   width: 100%;
@@ -356,17 +355,10 @@ const CardWrapper = styled.div`
     font-size: 0.95rem;
     margin-bottom: 12px;
   }
-
-  /* --- DESCRIPTION TEXT STYLING --- */
   .description-text {
-    font-size: 0.9rem;
-    color: #777;
-    margin-bottom: 20px;
-    display: -webkit-box;
-    -webkit-line-clamp: 2; /* Truncate after 2 lines */
     -webkit-box-orient: vertical;
     overflow: hidden;
-    height: 2.7rem; /* Keeps all cards same height */
+    height: 2.7rem;
     line-height: 1.4;
   }
 
@@ -499,7 +491,6 @@ const Home = () => {
   const userId = localStorage.getItem("userId");
   const userRole = localStorage.getItem("userRole");
 
-  // Memoized fetch function
   const fetchProperties = useCallback(async () => {
     try {
       const response = await axios.get(API.HOME.ALL);
@@ -531,7 +522,6 @@ const Home = () => {
     ];
   }, [properties]);
 
-  // Memoize filtered properties for performance
   const filteredProperties = useMemo(() => {
     return properties.filter(
       (prop) =>
@@ -757,10 +747,13 @@ const Home = () => {
                       <MDBCardImage
                         src={
                           prop.image
-                            ? prop.image.startsWith("http")
+                            ? prop.image.startsWith("http") ||
+                              prop.image.startsWith("data:")
                               ? prop.image
-                              : `${API_BASE_URL}${prop.image}`
-                            : "https://placehold.co/1200x800/e2e8f0/64748b?text=Property"
+                              : prop.image.startsWith("/")
+                                ? `${API_BASE_URL}${prop.image}`
+                                : "https://via.placeholder.com/400x250?text=No+Image"
+                            : "https://via.placeholder.com/400x250?text=No+Image"
                         }
                         position="top"
                         alt={prop.propertyName}

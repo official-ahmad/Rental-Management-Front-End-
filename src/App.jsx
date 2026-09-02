@@ -2,7 +2,7 @@ import React, { Suspense, lazy } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
 
-// Lazy load all components for better performance
+
 const Home = lazy(() => import("./pages/Home"));
 const LandingPage = lazy(() => import("./pages/landingpage"));
 const Login = lazy(() => import("./pages/Login"));
@@ -14,7 +14,7 @@ const AdminDashboard = lazy(() => import("../dashboard/AdminDashboard"));
 const ManagerDashboard = lazy(() => import("../dashboard/ManagerDashboard"));
 const TenantDashboard = lazy(() => import("../dashboard/TenantDashboard"));
 
-// Loading spinner component
+
 const LoadingSpinner = () => (
   <div
     style={{

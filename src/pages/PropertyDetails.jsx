@@ -280,7 +280,7 @@ const PropertyDetails = () => {
           <img
             src={
               property.image ||
-              "https://placehold.co/1200x500/e2e8f0/64748b?text=Property"
+              "https://via.placeholder.com///via.placeholder.com/600x400?text=No+Image"
             }
             alt={property.propertyName}
             style={{ width: "100%", height: 360, objectFit: "cover" }}
