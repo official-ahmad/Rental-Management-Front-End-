@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+﻿import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast, Toaster } from "react-hot-toast";
 import Swal from "sweetalert2";
@@ -27,15 +27,68 @@ import {
 } from "lucide-react";
 import { API, apiClient } from "../src/config/api";
 import { getDisplayName, formatDate } from "../src/utils/helpers";
+import RubberSegment from "../src/components/RubberSegment";
 
+/* ══════════════════════════════════════════════════════════════ */
+const AdminDashboard = () => {
+  const navigate = useNavigate();
+  const role = localStorage.getItem("userRole");
+  const [adminProfile, setAdminProfile] = useState({
+    firstName: localStorage.getItem("userName") || "System",
+    lastName: "",
+    email: localStorage.getItem("userEmail") || "",
+    phone: "",
+  });
+  const adminName =
+    `${adminProfile.firstName} ${adminProfile.lastName}`.trim() || "Super Admin";
+  const API_BASE = API.MANAGER.BASE;
+
+  /* ── UI state ─────────────────────────────────────────────── */
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
+  const [overviewPeriod, setOverviewPeriod] = useState("Week");
   const [searchQuery, setSearchQuery] = useState("");
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileForm, setProfileForm] = useState(adminProfile);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+  });
 
+  /* ── Data state ───────────────────────────────────────────── */
+  const [managers, setManagers] = useState([]);
+  const [tenants, setTenants] = useState([]);
+  const [properties, setProperties] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
+
+  /* ── Block/suspend state (tracks locally until page refresh) */
   const [blockedIds, setBlockedIds] = useState(new Set());
 
+  /* ── Property form ───────────────────────────────────────── */
+  const initialFormState = {
+    propertyName: "",
+    location: "",
+    rentAmount: "",
+    bedrooms: "",
+    bathrooms: "",
+    area: "",
+    image: "",
+    description: "",
+    category: "Apartment",
+    status: "Vacant",
+    managerId: "",
+  };
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
+  const [formData, setFormData] = useState(initialFormState);
+
+  /* ── Fetch all data ───────────────────────────────────────── */
   const fetchAllData = useCallback(async () => {
     try {
       setLoading(true);
@@ -53,6 +106,72 @@ import { getDisplayName, formatDate } from "../src/utils/helpers";
       const allUsers = userRes.data || [];
       setManagers(allUsers.filter((u) => u.role?.toLowerCase() === "manager"));
       setTenants(allUsers.filter((u) => u.role?.toLowerCase() === "tenant"));
+      /* Restore manager suspension state from the database. */
+      const serverBlocked = allUsers
+        .filter((u) => u.isSuspended || u.isBlocked)
+        .map((u) => u._id);
+      setBlockedIds(new Set(serverBlocked));
+    } catch {
+      toast.error("Failed to sync data. Check your connection.");
+    } finally {
+      setLoading(false);
+    }
+  }, [API_BASE]);
+
+  useEffect(() => {
+    if (!role || role.toLowerCase() !== "admin") {
+      toast.error("Access denied. Admin only!");
+      navigate("/page", { replace: true });
+    } else {
+      fetchAllData();
+    }
+  }, [role, navigate, fetchAllData]);
+
+  const loadAdminProfile = useCallback(async () => {
+    try {
+      const response = await apiClient.get(API.AUTH.ADMIN_PROFILE);
+      setAdminProfile(response.data.profile);
+      setProfileForm(response.data.profile);
+      localStorage.setItem(
+        "userName",
+        `${response.data.profile.firstName} ${response.data.profile.lastName}`.trim(),
+      );
+      localStorage.setItem("userEmail", response.data.profile.email);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to load admin profile.");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (role?.toLowerCase() === "admin") loadAdminProfile();
+  }, [role, loadAdminProfile]);
+
+  const handleProfileSave = async (event) => {
+    event.preventDefault();
+    setProfileSaving(true);
+    try {
+      const response = await apiClient.put(API.AUTH.ADMIN_PROFILE, {
+        ...profileForm,
+        ...passwordForm,
+      });
+      setAdminProfile(response.data.profile);
+      setProfileForm(response.data.profile);
+      setPasswordForm({ currentPassword: "", newPassword: "" });
+      localStorage.setItem(
+        "userName",
+        `${response.data.profile.firstName} ${response.data.profile.lastName}`.trim(),
+      );
+      localStorage.setItem("userEmail", response.data.profile.email);
+      setProfileOpen(false);
+      toast.success("Admin profile updated.");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to update admin profile");
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
+  /* ── Tab change (closes mobile sidebar) ────────────────────── */
   const handleTabChange = useCallback((id) => {
     setActiveTab(id);
     setSearchQuery("");
@@ -66,6 +185,79 @@ import { getDisplayName, formatDate } from "../src/utils/helpers";
     [navigate],
   );
 
+  /* ── Property modal ──────────────────────────────────────── */
+  const handleOpenModal = useCallback(
+    (prop = null) => {
+      if (prop) {
+        setEditMode(true);
+        setSelectedId(prop._id);
+        setFormData({
+          ...prop,
+          managerId:
+            prop.owner ||
+            prop.managerId?._id ||
+            prop.managerId ||
+            managers[0]?._id ||
+            "",
+        });
+      } else {
+        setEditMode(false);
+        setFormData({ ...initialFormState, managerId: managers[0]?._id || "" });
+      }
+      setModalOpen(true);
+    },
+    [managers],
+  ); // eslint-disable-line
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const payload = {
+      ...formData,
+      name: formData.propertyName,
+      rentAmount: Number(formData.rentAmount),
+      bedrooms: Number(formData.bedrooms),
+      bathrooms: Number(formData.bathrooms),
+      area: Number(formData.area),
+      managerId: formData.managerId?._id || formData.managerId || null,
+    };
+    try {
+      if (editMode) {
+        await apiClient.put(`${API_BASE}/update/${selectedId}`, payload);
+        toast.success("Property updated!");
+      } else {
+        await apiClient.post(`${API_BASE}/add`, payload);
+        toast.success("Property added!");
+      }
+      setModalOpen(false);
+      fetchAllData();
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Error saving property");
+    }
+  };
+
+  const handleDelete = (id) => {
+    Swal.fire({
+      title: "Delete Property?",
+      text: "This action cannot be undone.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "Yes, delete",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await apiClient.delete(`${API_BASE}/delete/${id}`);
+          toast.success("Property deleted!");
+          fetchAllData();
+        } catch {
+          toast.error("Delete failed");
+        }
+      }
+    });
+  };
+
+  /* ── Delete user ─────────────────────────────────────────── */
   const handleDeleteUser = useCallback(
     (id, name) => {
       Swal.fire({
@@ -82,8 +274,10 @@ import { getDisplayName, formatDate } from "../src/utils/helpers";
             await apiClient.delete(`${API_BASE}/users/${id}`);
             toast.success("User removed!");
             fetchAllData();
-          } catch {
-            toast.error("Failed to remove user");
+          } catch (error) {
+            toast.error(
+              error.response?.data?.message || "Failed to remove user",
+            );
           }
         }
       });
@@ -91,23 +285,27 @@ import { getDisplayName, formatDate } from "../src/utils/helpers";
     [API_BASE, fetchAllData],
   );
 
+  /* ── Block / unblock user ────────────────────────────────── */
   const handleBlockUser = useCallback(
-    async (id, name, isBlocked) => {
+    async (id, name) => {
+      const isBlocked = blockedIds.has(id);
       try {
-        await apiClient.patch(`${API_BASE}/users/${id}/block`);
+        await apiClient.patch(API.MANAGER.SUSPEND_USER(id), {
+          suspended: !isBlocked,
+        });
         setBlockedIds((prev) => {
           const next = new Set(prev);
           isBlocked ? next.delete(id) : next.add(id);
           return next;
         });
-        toast.success(
-          `${name} ${isBlocked ? "unblocked" : "suspended"}`,
+        toast.success(`${name} ${isBlocked ? "unblocked" : "suspended"}`);
+      } catch (error) {
+        toast.error(
+          error.response?.data?.message || "Failed to update manager access",
         );
-      } catch {
-        toast.error("Failed to update user status");
       }
     },
-    [API_BASE],
+    [blockedIds],
   );
 
   const handleDeleteFeedback = (id, name) => {
@@ -132,6 +330,26 @@ import { getDisplayName, formatDate } from "../src/utils/helpers";
     });
   };
 
+  /* ── Logout ──────────────────────────────────────────────── */
+  const handleLogout = () => {
+    Swal.fire({
+      title: "Logout?",
+      text: "You'll need to sign in again.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#059669",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "Logout",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        localStorage.clear();
+        toast.success("Logged out!");
+        navigate("/page");
+      }
+    });
+  };
+
+  /* ── Computed stats ──────────────────────────────────────── */
   const stats = useMemo(() => {
     const occupied = properties.filter((p) => p.status === "Occupied");
     const totalRevenue = occupied.reduce((s, p) => s + (p.rentAmount || 0), 0);
@@ -145,6 +363,28 @@ import { getDisplayName, formatDate } from "../src/utils/helpers";
     return { totalRevenue, occupancyRate, pendingBookings };
   }, [properties, bookings]);
 
+  /* ── Activity log (derived from bookings) ────────────────── */
+  const activityLogs = useMemo(
+    () =>
+      [...bookings]
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt || b.bookingDate) -
+            new Date(a.createdAt || a.bookingDate),
+        )
+        .slice(0, 50)
+        .map((b) => ({
+          id: b._id,
+          tenant: getDisplayName(b.tenantId) || b.tenantId || "Unknown",
+          property: b.propertyId?.propertyName || "—",
+          action: b.status,
+          payment: b.paymentStatus || "—",
+          date: b.bookingDate || b.createdAt,
+        })),
+    [bookings],
+  );
+
+  /* ── Filtered table data ─────────────────────────────────── */
   const displayData = useMemo(() => {
     let data = [];
     if (activeTab === "managers") data = managers;
@@ -166,6 +406,19 @@ import { getDisplayName, formatDate } from "../src/utils/helpers";
     );
   }, [activeTab, managers, tenants, properties, bookings, feedbacks, searchQuery]);
 
+  /* ── Nav items ───────────────────────────────────────────── */
+  const navItems = [
+    { id: "overview", label: "Overview", icon: LayoutDashboard },
+    { id: "properties", label: "Properties", icon: Building2 },
+    { id: "managers", label: "Managers", icon: UserCog },
+    { id: "tenants", label: "Tenants", icon: Users },
+    { id: "bookings", label: "Bookings", icon: ClipboardList },
+    { id: "activity", label: "Activity Log", icon: Activity },
+    { id: "audit-logs", label: "Audit Logs", icon: Activity },
+    { id: "feedbacks", label: "Client Feedbacks", icon: Users },
+  ];
+
+  /* ── Loading ─────────────────────────────────────────────── */
   if (loading)
     return (
       <div className="min-h-screen bg-[#f0f4f8] flex items-center justify-center">
@@ -178,6 +431,41 @@ import { getDisplayName, formatDate } from "../src/utils/helpers";
       </div>
     );
 
+  /* ── Render ──────────────────────────────────────────────── */
+  return (
+    <div className="flex min-h-screen bg-[#f0f4f8]">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        :root {
+          --sh:  0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+          --sh2: 0 4px 16px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.04);
+          --sh3: 0 10px 40px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.05);
+        }
+        @keyframes up { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+        .a1 { animation: up 0.38s ease both; }
+        .a2 { animation: up 0.38s 0.06s ease both; }
+        .a3 { animation: up 0.38s 0.12s ease both; }
+        .a4 { animation: up 0.38s 0.18s ease both; }
+        .a5 { animation: up 0.38s 0.24s ease both; }
+        .card-hover { transition: box-shadow 0.2s, transform 0.2s; }
+        .card-hover:hover { box-shadow: var(--sh2); transform: translateY(-2px); }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+      `}</style>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          style: {
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            borderRadius: 12,
+            fontSize: 13,
+          },
+        }}
+      />
+
+      {/* Mobile overlay */}
       {mobileOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
@@ -190,7 +478,7 @@ import { getDisplayName, formatDate } from "../src/utils/helpers";
         className={`
           ${sidebarOpen ? "w-64" : "w-20"}
           fixed lg:sticky top-0 h-screen bg-[#0f172a] text-white
-          flex flex-col flex-shrink-0 z-50 transition-all duration-300 ease-in-out
+          flex flex-col flex-shrink-0 z-50 overflow-y-auto transition-all duration-300 ease-in-out
           ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         `}
       >
@@ -217,7 +505,14 @@ import { getDisplayName, formatDate } from "../src/utils/helpers";
         {/* Profile */}
         {sidebarOpen && (
           <div className="px-5 pb-5 pt-4 border-b border-white/10">
-            <div className="bg-white/5 rounded-xl p-3 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setProfileForm(adminProfile);
+                setProfileOpen(true);
+              }}
+              className="w-full bg-white/5 rounded-xl p-3 flex items-center gap-3 text-left transition hover:bg-white/10"
+            >
               <div className="w-10 h-10 bg-emerald-500/20 rounded-full flex items-center justify-center text-emerald-400 font-bold text-sm flex-shrink-0">
                 {adminName.charAt(0).toUpperCase()}
               </div>
@@ -225,12 +520,13 @@ import { getDisplayName, formatDate } from "../src/utils/helpers";
                 <p className="text-sm font-semibold truncate">{adminName}</p>
                 <p className="text-xs text-slate-500">Administrator</p>
               </div>
-            </div>
+              <span className="ml-auto text-[10px] text-slate-500">Profile</span>
+            </button>
           </div>
         )}
 
         {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-1">
+        <nav className="flex-1 min-h-0 px-3 py-4 space-y-1">
           {navItems.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
@@ -255,7 +551,7 @@ import { getDisplayName, formatDate } from "../src/utils/helpers";
         </nav>
 
         {/* Logout */}
-        <div className="p-3 border-t border-white/10">
+        <div className="flex-shrink-0 p-3 border-t border-white/10 bg-[#0f172a]">
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 transition-all"
@@ -314,6 +610,32 @@ import { getDisplayName, formatDate } from "../src/utils/helpers";
           {/* ─── OVERVIEW TAB ─────────────────────────────────── */}
           {activeTab === "overview" && (
             <div className="space-y-8">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between a1">
+                <div>
+                  <p className="text-sm font-semibold text-slate-700">Overview period</p>
+                  <p className="text-xs text-slate-400">Showing {overviewPeriod.toLowerCase()} reporting data</p>
+                </div>
+                <RubberSegment
+                  items={["Day", "Week", "Month", "Year"]}
+                  defaultValue="Week"
+                  onChange={(value) => setOverviewPeriod(value)}
+                  trackColor="#27272a"
+                  thumbColor="#fafafa"
+                  textColor="#fafafa"
+                  activeTextColor="#18181b"
+                  size="md"
+                  radius={10}
+                  inset={3}
+                  equalSlots
+                  stretch={100}
+                  squash={3}
+                  speed={1}
+                  glide={75}
+                  draggable
+                  preset="periods"
+                  disabled={false}
+                />
+              </div>
               {/* Stats */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 a2">
                 <StatCard
@@ -467,7 +789,7 @@ import { getDisplayName, formatDate } from "../src/utils/helpers";
                         <img
                           src={
                             prop.image ||
-                            "https://via.placeholder.com///via.placeholder.com/60x60?text=No+Image"
+                            "https://placehold.co/40x40/f1f5f9/94a3b8?text=P"
                           }
                           alt=""
                           className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
@@ -691,7 +1013,7 @@ import { getDisplayName, formatDate } from "../src/utils/helpers";
                                   <img
                                     src={
                                       item.image ||
-                                      "https://via.placeholder.com/40x40?text=No+Image"
+                                      "https://placehold.co/40x40/f1f5f9/94a3b8?text=P"
                                     }
                                     alt=""
                                     className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
@@ -1179,7 +1501,7 @@ import { getDisplayName, formatDate } from "../src/utils/helpers";
                     }
                     className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
                   >
-                    {["Vacant", "Occupied", "Under Maintenance"].map((o) => (
+                    {["Vacant", "Occupied"].map((o) => (
                       <option key={o}>{o}</option>
                     ))}
                   </select>
@@ -1232,6 +1554,109 @@ import { getDisplayName, formatDate } from "../src/utils/helpers";
         </div>
       )}
 
+      {profileOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
+          <form
+            onSubmit={handleProfileSave}
+            className="relative w-full max-w-lg overflow-hidden rounded-[2rem] border border-white/40 bg-white/90 p-8 shadow-2xl backdrop-blur-2xl"
+          >
+            <div className="absolute -right-16 -top-16 h-40 w-40 rounded-full bg-emerald-300/30 blur-3xl" />
+            <button
+              type="button"
+              onClick={() => setProfileOpen(false)}
+              className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:rotate-90 hover:bg-slate-200"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <div className="relative mb-7 flex items-center gap-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-xl font-extrabold text-white shadow-lg shadow-emerald-500/25">
+                {adminName.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <h2 className="text-2xl font-extrabold text-slate-900">Admin Profile</h2>
+                <p className="text-sm text-slate-500">Manage your account details securely</p>
+              </div>
+            </div>
+            <div className="relative grid gap-4 sm:grid-cols-2">
+              {[
+                ["First name", "firstName"],
+                ["Last name", "lastName"],
+                ["Email address", "email"],
+                ["Phone number", "phone"],
+              ].map(([label, key]) => (
+                <label key={key} className="text-sm font-semibold text-slate-700">
+                  {label}
+                  <input
+                    type={key === "email" ? "email" : "text"}
+                    required={key !== "phone"}
+                    minLength={key === "firstName" || key === "lastName" ? 3 : undefined}
+                    maxLength={key === "firstName" || key === "lastName" ? 15 : key === "phone" ? 20 : 120}
+                    value={profileForm[key] || ""}
+                    onChange={(event) =>
+                      setProfileForm((current) => ({
+                        ...current,
+                        [key]: event.target.value,
+                      }))
+                    }
+                    className="mt-1.5 w-full rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 font-normal outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-500/15"
+                  />
+                </label>
+              ))}
+            </div>
+            <div className="relative mt-6 border-t border-slate-200 pt-5">
+              <p className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-400">
+                Change password (optional)
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <input
+                  type="password"
+                  placeholder="Current password"
+                  autoComplete="current-password"
+                  value={passwordForm.currentPassword}
+                  onChange={(event) =>
+                    setPasswordForm((current) => ({
+                      ...current,
+                      currentPassword: event.target.value,
+                    }))
+                  }
+                  className="rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-500/15"
+                />
+                <input
+                  type="password"
+                  placeholder="New password (8+ chars)"
+                  minLength={8}
+                  autoComplete="new-password"
+                  value={passwordForm.newPassword}
+                  onChange={(event) =>
+                    setPasswordForm((current) => ({
+                      ...current,
+                      newPassword: event.target.value,
+                    }))
+                  }
+                  className="rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-500/15"
+                />
+              </div>
+            </div>
+            <div className="relative mt-7 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setProfileOpen(false)}
+                className="rounded-2xl px-5 py-3 font-semibold text-slate-500 transition hover:bg-slate-100"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={profileSaving}
+                className="rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-3 font-bold text-white shadow-lg shadow-emerald-600/25 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {profileSaving ? "Saving..." : "Save profile"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       <style>{`
         @keyframes fadeIn      { from { opacity: 0 } to { opacity: 1 } }
         @keyframes fadeSlideUp { from { transform: translateY(16px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
@@ -1240,3 +1665,68 @@ import { getDisplayName, formatDate } from "../src/utils/helpers";
   );
 };
 
+/* ─── Reusable components ──────────────────────────────────────── */
+
+const StatCard = ({ icon: Icon, label, value, color }) => {
+  const colors = {
+    blue: "bg-blue-50    text-blue-600",
+    violet: "bg-violet-50  text-violet-600",
+    emerald: "bg-emerald-50 text-emerald-600",
+    amber: "bg-amber-50   text-amber-600",
+  };
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200/60 p-5 shadow-sm hover:shadow-md transition-shadow card-hover">
+      <div
+        className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${colors[color]}`}
+      >
+        <Icon className="w-5 h-5" />
+      </div>
+      <p className="text-2xl font-extrabold text-slate-900 mb-0.5">{value}</p>
+      <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+        {label}
+      </p>
+    </div>
+  );
+};
+
+const StatusBadge = ({ status }) => {
+  const map = {
+    Vacant: "bg-emerald-50 text-emerald-700",
+    Occupied: "bg-amber-50   text-amber-700",
+    "Under Maintenance": "bg-slate-100  text-slate-600",
+    Pending: "bg-amber-50   text-amber-700",
+    Approved: "bg-emerald-50 text-emerald-700",
+    Rejected: "bg-red-50     text-red-700",
+    Paid: "bg-emerald-50 text-emerald-700",
+  };
+  return (
+    <span
+      className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold ${map[status] || "bg-slate-100 text-slate-500"}`}
+    >
+      {status}
+    </span>
+  );
+};
+
+const ModalInput = ({
+  label,
+  value,
+  onChange,
+  type = "text",
+  required = true,
+}) => (
+  <div>
+    <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+      {label}
+    </label>
+    <input
+      type={type}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      required={required}
+      className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-colors"
+    />
+  </div>
+);
+
+export default AdminDashboard;

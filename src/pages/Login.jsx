@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { toast, Toaster } from "react-hot-toast";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -31,6 +31,17 @@ const Login = () => {
   const [adminAccessKey, setAdminAccessKey] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
+  const [adminLockoutSeconds, setAdminLockoutSeconds] = useState(0);
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [adminAttemptsRemaining, setAdminAttemptsRemaining] = useState(null);
+
+  useEffect(() => {
+    if (adminLockoutSeconds <= 0) return undefined;
+    const timer = window.setInterval(() => {
+      setAdminLockoutSeconds((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [adminLockoutSeconds]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -71,6 +82,8 @@ const Login = () => {
   };
 
   const handleAdminAccess = async () => {
+    if (adminLockoutSeconds > 0 || adminLoading) return;
+    setAdminLoading(true);
     try {
       const verifyRes = await axios.post(
         `${API_BASE_URL}/api/auth/verify-admin-access`,
@@ -87,6 +100,7 @@ const Login = () => {
           localStorage.setItem("token", loginRes.data.token);
           localStorage.setItem("userId", loginRes.data.adminId);
           localStorage.setItem("userName", loginRes.data.adminName);
+          localStorage.setItem("userEmail", loginRes.data.adminEmail);
           localStorage.setItem("userRole", "Admin");
 
           toast.success("Admin access granted!");
@@ -95,9 +109,18 @@ const Login = () => {
         }
       }
     } catch (error) {
+      const responseData = error.response?.data;
+      if (error.response?.status === 429) {
+        setAdminLockoutSeconds(responseData.retryAfterSeconds || 900);
+      }
+      if (typeof responseData?.attemptsRemaining === "number") {
+        setAdminAttemptsRemaining(responseData.attemptsRemaining);
+      }
       toast.error(
-        error.response?.data?.message || "Admin verification failed!",
+        responseData?.message || "Admin verification failed!",
       );
+    } finally {
+      setAdminLoading(false);
     }
   };
 
@@ -184,6 +207,17 @@ const Login = () => {
           <p className="text-slate-500 mb-8">
             Enter your credentials to access your account
           </p>
+
+          <button
+            type="button"
+            onClick={() => setShowAdminModal(true)}
+            className="w-full mb-6 rounded-2xl border border-white/60 bg-white/40 px-4 py-3 text-sm font-semibold text-slate-700 shadow-lg shadow-slate-300/20 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50/70 hover:text-emerald-700"
+          >
+            <span className="inline-flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4" />
+              Admin Login here
+            </span>
+          </button>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Email */}
@@ -322,41 +356,43 @@ const Login = () => {
 
       {/* Admin Access Modal */}
       {showAdminModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-[fadeIn_0.2s_ease]">
-          <div className="bg-white p-8 rounded-2xl max-w-sm w-[90%] relative shadow-2xl animate-[fadeSlideUp_0.3s_ease]">
+        <div className="fixed inset-0 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md z-50 animate-[fadeIn_0.2s_ease]">
+          <div className="relative w-full max-w-md overflow-hidden rounded-[2rem] border border-white/30 bg-gradient-to-br from-white/80 via-white/65 to-emerald-50/70 p-8 shadow-2xl shadow-slate-950/40 backdrop-blur-2xl animate-[fadeSlideUp_0.3s_ease]">
+            <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-emerald-300/30 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-24 -left-16 h-44 w-44 rounded-full bg-cyan-300/25 blur-3xl" />
             <button
-              onClick={() => setShowAdminModal(false)}
-              className="absolute top-4 right-4 w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-all"
+              onClick={() => !adminLoading && setShowAdminModal(false)}
+              className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-white/60 text-slate-500 shadow-sm transition-all hover:rotate-90 hover:bg-white hover:text-slate-800"
             >
               <X className="w-4 h-4" />
             </button>
 
-            <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-5">
-              <ShieldCheck className="w-7 h-7 text-emerald-600" />
+            <div className="relative mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/30">
+              <ShieldCheck className="h-8 w-8 text-white" />
             </div>
 
-            <h3 className="text-slate-900 text-xl font-bold text-center mb-1">
+            <h3 className="relative text-center text-2xl font-extrabold tracking-tight text-slate-900">
               Admin Access
             </h3>
-            <p className="text-slate-500 text-sm text-center mb-6">
-              Enter your admin credentials to continue
+            <p className="relative mb-7 mt-2 text-center text-sm leading-6 text-slate-600">
+              Secure sign-in for your management dashboard
             </p>
 
-            <div className="space-y-3">
+            <div className="relative space-y-3.5">
               <input
                 type="password"
                 placeholder="Access Key"
                 value={adminAccessKey}
                 onChange={(e) => setAdminAccessKey(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAdminAccess()}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all"
+                className="w-full rounded-2xl border border-white/80 bg-white/65 px-4 py-3.5 text-slate-900 shadow-sm outline-none placeholder:text-slate-400 transition-all focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-500/15"
               />
               <input
                 type="email"
                 placeholder="Admin Email"
                 value={adminEmail}
                 onChange={(e) => setAdminEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all"
+                className="w-full rounded-2xl border border-white/80 bg-white/65 px-4 py-3.5 text-slate-900 shadow-sm outline-none placeholder:text-slate-400 transition-all focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-500/15"
               />
               <input
                 type="password"
@@ -364,13 +400,24 @@ const Login = () => {
                 value={adminPassword}
                 onChange={(e) => setAdminPassword(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAdminAccess()}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all"
+                className="w-full rounded-2xl border border-white/80 bg-white/65 px-4 py-3.5 text-slate-900 shadow-sm outline-none placeholder:text-slate-400 transition-all focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-500/15"
               />
+              {adminAttemptsRemaining !== null && adminLockoutSeconds === 0 && (
+                <p className="px-1 text-xs font-medium text-amber-700">
+                  {adminAttemptsRemaining} attempt
+                  {adminAttemptsRemaining === 1 ? "" : "s"} remaining
+                </p>
+              )}
               <button
                 onClick={handleAdminAccess}
-                className="w-full py-3.5 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 active:scale-[0.98] transition-all shadow-lg shadow-emerald-600/20 mt-2"
+                disabled={adminLockoutSeconds > 0 || adminLoading}
+                className="w-full rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 py-3.5 font-bold text-white shadow-lg shadow-emerald-600/25 transition-all hover:-translate-y-0.5 hover:from-emerald-700 hover:to-teal-700 active:translate-y-0 disabled:cursor-not-allowed disabled:from-slate-400 disabled:to-slate-500"
               >
-                Verify & Login
+                {adminLockoutSeconds > 0
+                  ? `Locked — try again in ${Math.floor(adminLockoutSeconds / 60)}:${String(adminLockoutSeconds % 60).padStart(2, "0")}`
+                  : adminLoading
+                    ? "Checking..."
+                    : "Verify & Login"}
               </button>
             </div>
           </div>

@@ -1,6 +1,15 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const localApiUrl =
+  import.meta.env.VITE_LOCAL_API_URL || "http://localhost:8000";
+const remoteApiUrl =
+  import.meta.env.VITE_REMOTE_API_URL ||
+  "https://rental-management-back-end.onrender.com";
+const apiMode = import.meta.env.VITE_API_MODE?.trim().toLowerCase();
 
-export { API_BASE_URL };
+const API_BASE_URL = (
+  apiMode === "remote" ? remoteApiUrl : localApiUrl
+).replace(/\/+$/, "");
+
+export { API_BASE_URL, apiMode };
 
 import axios from "axios";
 
@@ -29,6 +38,7 @@ export const API = {
   AUTH: {
     LOGIN: `${API_BASE_URL}/api/auth/login`,
     REGISTER: `${API_BASE_URL}/api/auth/register`,
+    ADMIN_PROFILE: `${API_BASE_URL}/api/auth/admin-profile`,
   },
 
   BOOKINGS: {
@@ -53,6 +63,7 @@ export const API = {
     ADD: `${API_BASE_URL}/api/manager/add`,
     UPDATE: (id) => `${API_BASE_URL}/api/manager/update/${id}`,
     DELETE: (id) => `${API_BASE_URL}/api/manager/delete/${id}`,
+    SUSPEND_USER: (id) => `${API_BASE_URL}/api/manager/users/${id}/suspend`,
   },
 };
 
