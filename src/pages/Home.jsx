@@ -13,6 +13,7 @@ import {
   MDBIcon,
 } from "mdb-react-ui-kit";
 import { API_BASE_URL, API } from "../config/api";
+import Loader from "../components/Loader";
 
 const HeroSection = styled.div`
   position: relative;
@@ -710,10 +711,7 @@ const Home = () => {
         </FilterPanel>
 
         {loading ? (
-          <div className="text-center py-5">
-            <div className="spinner-border text-primary" role="status"></div>
-            <h4 className="mt-3">Loading Properties...</h4>
-          </div>
+          <Loader label="Loading properties..." />
         ) : filteredProperties.length === 0 ? (
           <div
             style={{

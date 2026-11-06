@@ -13,6 +13,10 @@ import {
   FaTrashAlt,
   FaWallet,
   FaComments,
+  FaWrench,
+  FaCreditCard,
+  FaDownload,
+  FaChevronRight,
 } from "react-icons/fa";
 import {
   MDBModal,
@@ -26,6 +30,7 @@ import {
 import Swal from "sweetalert2";
 import { API, apiClient } from "../src/config/api";
 import SlideCommit from "../src/components/SlideCommit";
+import Loader from "../src/components/Loader";
 
 /* ─────────────────────────────────────────────────
    STYLES
@@ -400,6 +405,11 @@ const TenantDashboard = () => {
   const [bookings, setBookings] = useState([]);
   const [selectedProp, setSelectedProp] = useState(null);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
+  const [leaseOpen, setLeaseOpen] = useState(false);
+  const [supportForm, setSupportForm] = useState({ category: "", description: "" });
+  const [contactMessage, setContactMessage] = useState("");
   const [feedbackForm, setFeedbackForm] = useState({
     name: "",
     email: "",
@@ -464,6 +474,81 @@ const TenantDashboard = () => {
       p.map((b) => (b._id === bookingId ? { ...b, paymentStatus: "Paid" } : b)),
     );
     fetchTenantData();
+  };
+
+  const handleQuickPay = () => {
+    const payable = bookings.find(
+      (booking) =>
+        booking.status === "Approved" && booking.paymentStatus !== "Paid",
+    );
+    if (!payable) {
+      toast("No approved rent payment is currently due.");
+      return;
+    }
+    handlePayment(
+      payable._id,
+      payable.propertyId?.rentAmount || 0,
+      payable.propertyId?.propertyName || "Rental property",
+    );
+  };
+
+  const submitSupport = async (event) => {
+    event.preventDefault();
+    try {
+      await apiClient.post("/api/feedback/submit", {
+        name: userName,
+        email: localStorage.getItem("userEmail") || "",
+        description: `[Support: ${supportForm.category}] ${supportForm.description}`,
+      });
+      setSupportOpen(false);
+      setSupportForm({ category: "", description: "" });
+      toast.success("Support ticket submitted successfully.");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to submit support ticket.");
+    }
+  };
+
+  const submitContact = async (event) => {
+    event.preventDefault();
+    try {
+      await apiClient.post("/api/feedback/submit", {
+        name: userName,
+        email: localStorage.getItem("userEmail") || "",
+        description: `[Landlord message] ${contactMessage}`,
+      });
+      setContactOpen(false);
+      setContactMessage("");
+      toast.success("Message sent successfully.");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to send message.");
+    }
+  };
+
+  const downloadStatement = () => {
+    const paidBookings = bookings.filter(
+      (booking) => booking.paymentStatus === "Paid" || booking.status === "Paid",
+    );
+    if (!paidBookings.length) {
+      toast("No paid transactions available yet.");
+      return;
+    }
+    const rows = [
+      ["Property", "Amount", "Booking Date", "Payment Status"],
+      ...paidBookings.map((booking) => [
+        booking.propertyId?.propertyName || "Rental property",
+        booking.propertyId?.rentAmount || 0,
+        fmtDate(booking.bookingDate),
+        "Paid",
+      ]),
+    ];
+    const csv = rows.map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "tenant-payment-statement.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success("Statement downloaded.");
   };
 
   /* cancel */
@@ -568,15 +653,7 @@ const TenantDashboard = () => {
 
   /* loading */
   if (loading)
-    return (
-      <>
-        <style>{CSS}</style>
-        <div className="loader">
-          <div className="spin" />
-          <span className="spin-lbl">Loading your dashboard…</span>
-        </div>
-      </>
-    );
+    return <Loader label="Loading your dashboard..." />;
 
   /* ── render ── */
   return (
@@ -643,6 +720,59 @@ const TenantDashboard = () => {
             >
               Cancel
             </button>
+          </div>
+        </div>
+      )}
+
+      {supportOpen && (
+        <div className="fixed inset-0 z-[280] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
+          <form onSubmit={submitSupport} className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="mb-5 flex items-center justify-between border-b border-slate-100 pb-3">
+              <h2 className="flex items-center gap-2 text-base font-bold text-slate-900"><FaWrench className="text-amber-500" /> Raise Support Ticket</h2>
+              <button type="button" onClick={() => setSupportOpen(false)}><FaTimes className="text-slate-400" /></button>
+            </div>
+            <select required value={supportForm.category} onChange={(event) => setSupportForm({ ...supportForm, category: event.target.value })} className="mb-4 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm">
+              <option value="">Select issue category</option>
+              <option>Maintenance</option>
+              <option>Payment</option>
+              <option>Lease agreement</option>
+              <option>Other</option>
+            </select>
+            <textarea required rows={4} value={supportForm.description} onChange={(event) => setSupportForm({ ...supportForm, description: event.target.value })} placeholder="Describe the issue..." className="mb-4 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm" />
+            <button className="btn btn-primary w-full justify-center">Submit Ticket</button>
+          </form>
+        </div>
+      )}
+
+      {contactOpen && (
+        <div className="fixed inset-0 z-[280] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
+          <form onSubmit={submitContact} className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="mb-5 flex items-center justify-between border-b border-slate-100 pb-3">
+              <h2 className="text-base font-bold text-slate-900">Contact Landlord</h2>
+              <button type="button" onClick={() => setContactOpen(false)}><FaTimes className="text-slate-400" /></button>
+            </div>
+            <p className="mb-4 rounded-xl bg-slate-50 p-3 text-sm text-slate-600">Your message will be sent to the property support team.</p>
+            <textarea required rows={4} value={contactMessage} onChange={(event) => setContactMessage(event.target.value)} placeholder="Type your query..." className="mb-4 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm" />
+            <button className="btn btn-green w-full justify-center">Send Message</button>
+          </form>
+        </div>
+      )}
+
+      {leaseOpen && latest && (
+        <div className="fixed inset-0 z-[280] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="mb-5 flex items-center justify-between border-b border-slate-100 pb-3">
+              <h2 className="text-base font-bold text-slate-900">Lease Agreement Summary</h2>
+              <button type="button" onClick={() => setLeaseOpen(false)}><FaTimes className="text-slate-400" /></button>
+            </div>
+            <div className="space-y-3 text-sm text-slate-600">
+              <div className="flex justify-between border-b border-slate-100 py-2"><span>Property</span><strong>{latest.propertyId?.propertyName || "—"}</strong></div>
+              <div className="flex justify-between border-b border-slate-100 py-2"><span>Tenant</span><strong>{userName}</strong></div>
+              <div className="flex justify-between border-b border-slate-100 py-2"><span>Start date</span><strong>{fmtDate(latest.bookingDate)}</strong></div>
+              <div className="flex justify-between border-b border-slate-100 py-2"><span>Monthly rent</span><strong>₹{Number(latest.propertyId?.rentAmount || 0).toLocaleString("en-IN")}</strong></div>
+              <div className="flex justify-between py-2"><span>Status</span><strong>{latest.status}</strong></div>
+            </div>
+            <button type="button" onClick={downloadStatement} className="btn btn-primary mt-5 w-full justify-center"><FaDownload /> Download Payment Statement</button>
           </div>
         </div>
       )}
@@ -732,6 +862,14 @@ const TenantDashboard = () => {
               {greeting}, {userName.split(" ")[0]}!
             </h1>
             <p>Manage your rental — payments, requests &amp; property info</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button className="btn btn-ghost" onClick={() => setSupportOpen(true)}>
+                <FaWrench size={11} /> Raise Support Ticket
+              </button>
+              <button className="btn btn-primary" onClick={handleQuickPay}>
+                <FaCreditCard size={11} /> Pay Rent Now
+              </button>
+            </div>
           </div>
 
           {/* Wallet */}
@@ -749,6 +887,14 @@ const TenantDashboard = () => {
               <div className="wallet-ico">
                 <FaWallet />
               </div>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button className="btn btn-ghost" onClick={() => toast("Wallet top-up is not enabled yet.")}>
+                Add Credits
+              </button>
+              <button className="btn btn-green" onClick={handleQuickPay}>
+                <FaCreditCard size={11} /> Quick Pay Rent
+              </button>
             </div>
           </div>
 
@@ -768,6 +914,11 @@ const TenantDashboard = () => {
               <div className="scard-sub">
                 {latest ? latest.propertyId?.location : "Browse properties"}
               </div>
+              {latest && (
+                <button className="mt-3 text-xs font-bold text-blue-600" onClick={() => setLeaseOpen(true)}>
+                  View Lease Agreement <FaChevronRight className="inline" size={9} />
+                </button>
+              )}
               <div className="ptrack">
                 <div
                   className="pfill"
@@ -870,10 +1021,24 @@ const TenantDashboard = () => {
                 <span className="t-count">{bookings.length} records</span>
                 <button
                   className="btn btn-green"
+                  onClick={() => setContactOpen(true)}
+                  style={{ padding: "6px 12px", fontSize: 12 }}
+                >
+                  <FaComments size={11} /> Contact Landlord
+                </button>
+                <button
+                  className="btn btn-ghost"
                   onClick={() => setFeedbackOpen(true)}
                   style={{ padding: "6px 12px", fontSize: 12 }}
                 >
-                  <FaComments size={11} /> Send Feedback
+                  Send Feedback
+                </button>
+                <button
+                  className="btn btn-ghost"
+                  onClick={downloadStatement}
+                  style={{ padding: "6px 12px", fontSize: 12 }}
+                >
+                  <FaDownload size={10} /> Statement
                 </button>
               </div>
             </div>

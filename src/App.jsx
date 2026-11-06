@@ -1,6 +1,9 @@
 import React, { Suspense, lazy } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
+import Loader from "./components/Loader";
+import MaintenancePage from "./pages/MaintenancePage";
+import "./maintenance.css";
 
 
 const Home = lazy(() => import("./pages/Home"));
@@ -12,41 +15,17 @@ const PropertyDetails = lazy(() => import("./pages/PropertyDetails"));
 const AdminDashboard = lazy(() => import("../dashboard/AdminDashboard"));
 const ManagerDashboard = lazy(() => import("../dashboard/ManagerDashboard"));
 const TenantDashboard = lazy(() => import("../dashboard/TenantDashboard"));
+const maintenanceMode = import.meta.env.VITE_MAINTENANCE_MODE === "true";
 
-
-const LoadingSpinner = () => (
-  <div
-    style={{
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      height: "100vh",
-      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    }}
-  >
-    <div
-      style={{
-        width: "50px",
-        height: "50px",
-        border: "4px solid rgba(255, 255, 255, 0.3)",
-        borderTop: "4px solid #fff",
-        borderRadius: "50%",
-        animation: "spin 0.8s linear infinite",
-      }}
-    />
-    <style>{`
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-    `}</style>
-  </div>
-);
 
 function App() {
+  if (maintenanceMode) {
+    return <MaintenancePage />;
+  }
+
   return (
     <Router>
-      <Suspense fallback={<LoadingSpinner />}>
+      <Suspense fallback={<Loader label="Loading..." />}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/page" element={<Navigate to="/login" replace />} />
