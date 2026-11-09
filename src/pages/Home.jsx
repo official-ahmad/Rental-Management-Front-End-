@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import styled from "styled-components";
+import { Bath, BedDouble, MapPin, Ruler } from "lucide-react";
 
 import {
   MDBContainer,
@@ -327,9 +328,9 @@ const FilterPanel = styled.div`
 const CardWrapper = styled.div`
   .property-card {
     transition: border-color 0.2s ease;
-    border-radius: 16px !important;
-    border: 1px solid #dce3e9 !important;
-    background: #fff;
+    border-radius: 12px !important;
+    border: 1px solid rgba(226, 232, 240, 0.8) !important;
+    background: #ffffff;
     overflow: hidden;
   }
   .property-card:hover {
@@ -350,12 +351,13 @@ const CardWrapper = styled.div`
     filter: brightness(0.96);
   }
   .price-tag {
-    background: #f4c430;
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(12px);
     color: #fff;
-    padding: 8px 12px;
-    border-radius: 8px;
-    font-weight: bold;
-    font-size: 1rem;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.75rem;
     position: absolute;
     bottom: 16px;
     left: 16px;
@@ -364,14 +366,14 @@ const CardWrapper = styled.div`
     padding: 24px;
   }
   .property-title {
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #333;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #0f172a;
     margin-bottom: 8px;
   }
   .location {
-    color: #666;
-    font-size: 0.95rem;
+    color: #64748b;
+    font-size: 0.875rem;
     margin-bottom: 16px;
   }
   .description-text {
@@ -379,25 +381,28 @@ const CardWrapper = styled.div`
     overflow: hidden;
     height: 2.7rem;
     line-height: 1.4;
+    color: #64748b;
+    font-size: 0.875rem;
   }
 
   .features {
     display: flex;
-    justify-content: space-between;
-    background: #f8f9fa;
-    padding: 12px;
-    border-radius: 8px;
+    align-items: center;
+    gap: 16px;
+    background: transparent;
+    padding: 0;
     margin-bottom: 24px;
   }
   .features span {
     display: flex;
     align-items: center;
-    font-size: 0.85rem;
-    color: #555;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: #475569;
   }
   .features .icon {
-    margin-right: 8px;
-    color: #b88900;
+    flex-shrink: 0;
+    color: #94a3b8;
   }
 
   .is-rented {
@@ -426,13 +431,13 @@ const ButtonWrapper = styled.div`
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 12px 16px;
-    border: 1px solid #b88900;
+    padding: 10px 14px;
+    border: 1px solid #0f172a;
     font-size: 14px;
-    background-color: #fff;
+    background-color: #0f172a;
     border-radius: 8px;
-    font-weight: 600;
-    color: #8a6700;
+    font-weight: 500;
+    color: #fff;
     cursor: pointer;
     overflow: hidden;
     transition: background-color 0.2s ease, color 0.2s ease;
@@ -442,8 +447,9 @@ const ButtonWrapper = styled.div`
     letter-spacing: 0;
   }
   .animated-button:hover:not(:disabled) {
-    color: #182230;
-    background: #f4c430;
+    color: #fff;
+    background: #1e293b;
+    border-color: #1e293b;
   }
   .animated-button .text {
     position: relative;
@@ -469,7 +475,7 @@ const ButtonWrapper = styled.div`
   .animated-button svg {
     position: absolute;
     width: 18px;
-    fill: #8a6700;
+    fill: #fff;
     z-index: 9;
     transition: transform 0.25s ease, opacity 0.25s ease;
   }
@@ -490,9 +496,9 @@ const ButtonWrapper = styled.div`
   }
 
   .animated-button:disabled {
-    background-color: #e0e0e0;
-    border-color: #ccc;
-    color: #888;
+    background-color: #e2e8f0;
+    border-color: #e2e8f0;
+    color: #64748b;
     cursor: not-allowed;
   }
 `;
@@ -878,7 +884,7 @@ const Home = () => {
                         style={{ cursor: "pointer" }}
                       />
                       <div className="price-tag">
-                        Rs. {prop.rentAmount?.toLocaleString()}
+                        Rs. {prop.rentAmount?.toLocaleString()} / mo
                       </div>
                     </div>
                     <MDBCardBody className="card-body d-flex flex-column">
@@ -890,12 +896,7 @@ const Home = () => {
                         {prop.propertyName}
                       </h5>
                       <p className="location">
-                        <MDBIcon
-                          fas
-                          icon="map-marker-alt"
-                          className="me-2"
-                          style={{ color: "#b88900" }}
-                        />
+                        <MapPin size={16} strokeWidth={1.5} className="me-2 inline-block" />
                         {prop.location}
                       </p>
 
@@ -907,15 +908,15 @@ const Home = () => {
 
                       <div className="features">
                         <span>
-                          <MDBIcon fas icon="bed" className="icon" />{" "}
+                          <BedDouble size={16} strokeWidth={1.5} className="icon" />
                           {prop.bedrooms} Bed
                         </span>
                         <span>
-                          <MDBIcon fas icon="bath" className="icon" />{" "}
+                          <Bath size={16} strokeWidth={1.5} className="icon" />
                           {prop.bathrooms} Bath
                         </span>
                         <span>
-                          <MDBIcon fas icon="ruler-combined" className="icon" />{" "}
+                          <Ruler size={16} strokeWidth={1.5} className="icon" />
                           {prop.area} sqft
                         </span>
                       </div>

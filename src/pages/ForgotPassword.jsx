@@ -26,11 +26,17 @@ const ForgotPassword = () => {
       const response = await axios.post(`${API_BASE_URL}/api/auth/forgot-password`, {
         email,
         role,
+      }, {
+        timeout: 20000,
       });
       toast.success(response.data.message);
       setStep("otp");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Unable to send OTP");
+      toast.error(
+        error.code === "ECONNABORTED"
+          ? "Email service timed out. Please try again."
+          : error.response?.data?.message || "Unable to send OTP",
+      );
     } finally {
       setLoading(false);
     }
