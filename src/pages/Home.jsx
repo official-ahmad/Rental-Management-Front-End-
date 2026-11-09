@@ -18,50 +18,40 @@ import Loader from "../components/Loader";
 const HeroSection = styled.div`
   position: relative;
   width: 100%;
-  padding: 24px 0 100px;
+  padding: 28px 0 88px;
   color: white;
   overflow: hidden;
   text-align: center;
-  margin-bottom: 60px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  background-size: 400% 400%;
-  animation: gradientShift 8s ease infinite;
-  @keyframes gradientShift {
-    0% {
-      background-position: 0% 50%;
-    }
-    50% {
-      background-position: 100% 50%;
-    }
-    100% {
-      background-position: 0% 50%;
-    }
-  }
-  &::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.4);
-    z-index: 1;
-  }
+  margin-bottom: 52px;
+  background: #182230;
+  border-bottom: 1px solid #2d3b4b;
   .content-box {
     position: relative;
     z-index: 2;
-    max-width: 800px;
+    max-width: 960px;
     margin: 0 auto;
   }
   h1 {
-    font-size: 3.5rem;
-    font-weight: 700;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-    margin-bottom: 20px;
+    max-width: 720px;
+    margin: 0 auto 16px;
+    color: #f8fafc;
+    font-size: clamp(2.4rem, 5vw, 4rem);
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    line-height: 1.05;
+  }
+  h1 span {
+    color: #f4c430;
   }
   p {
-    font-size: 1.2rem;
-    opacity: 0.9;
+    max-width: 560px;
+    margin: 0 auto;
+    color: #b7c2cf;
+    font-size: 1.05rem;
+    line-height: 1.6;
+  }
+  @media (max-width: 768px) {
+    padding: 20px 0 64px;
     margin-bottom: 40px;
   }
 `;
@@ -73,13 +63,12 @@ const TopNav = styled.div`
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 54px;
+  margin-bottom: 64px;
   .brand {
     color: #fff;
-    font-size: 1.6rem;
+    font-size: 1.5rem;
     font-weight: 800;
-    letter-spacing: 0.02em;
-    text-shadow: 0 2px 8px rgba(15, 23, 42, 0.35);
+    letter-spacing: -0.02em;
   }
   .brand span {
     color: #facc15;
@@ -88,9 +77,9 @@ const TopNav = styled.div`
     display: none;
     align-items: center;
     justify-content: center;
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.45);
     background: rgba(255, 255, 255, 0.12);
     color: #fff;
@@ -104,17 +93,14 @@ const TopNav = styled.div`
     justify-content: flex-end;
   }
   .nav-btn {
-    padding: 10px 20px;
-    border-radius: 50px;
-    font-weight: 600;
-    font-size: 14px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 13px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    border: 2px solid #fff;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    backdrop-filter: blur(10px);
-    background: rgba(255, 255, 255, 0.1);
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    border: 1px solid #607080;
+    background: transparent;
     color: #fff;
   }
   .login-btn {
@@ -123,26 +109,28 @@ const TopNav = styled.div`
   }
   .login-btn:hover {
     background: #fff;
-    color: #667eea;
-    box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+    border-color: #fff;
+    color: #182230;
   }
   .signup-btn {
-    background: #fff;
-    color: #667eea;
+    border-color: #f4c430;
+    background: #f4c430;
+    color: #182230;
   }
   .signup-btn:hover {
-    background: #667eea;
-    color: #fff;
-    box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+    background: #ffd866;
+    border-color: #ffd866;
+    color: #182230;
   }
   .user-btn {
-    background: rgba(0, 0, 0, 0.7);
+    background: #243343;
     color: #fff;
-    border: 2px solid #fff;
+    border: 1px solid #607080;
   }
   .user-btn:hover {
-    background: #fff;
-    color: #667eea;
+    background: #304357;
+    border-color: #8798a8;
+    color: #fff;
   }
   @media (max-width: 1024px) {
     .brand {
@@ -154,7 +142,7 @@ const TopNav = styled.div`
     }
   }
   @media (max-width: 768px) {
-    margin-bottom: 34px;
+    margin-bottom: 40px;
     align-items: center;
     .brand {
       font-size: 1.25rem;
@@ -169,11 +157,9 @@ const TopNav = styled.div`
       right: 0;
       width: min(240px, 80vw);
       padding: 12px;
-      border-radius: 14px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      backdrop-filter: blur(14px);
-      background: rgba(15, 23, 42, 0.92);
-      box-shadow: 0 16px 34px rgba(15, 23, 42, 0.4);
+      border-radius: 8px;
+      border: 1px solid #3b4b5c;
+      background: #202e3d;
       flex-direction: column;
       gap: 10px;
       flex-wrap: nowrap;
@@ -194,74 +180,111 @@ const TopNav = styled.div`
 const SearchWrapper = styled.div`
   display: flex;
   justify-content: center;
-  margin-top: 40px;
+  margin-top: 36px;
   .searchBox {
     display: flex;
     width: 100%;
-    max-width: 600px;
+    max-width: 640px;
     align-items: center;
     justify-content: space-between;
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 50px;
+    background: #f8fafc;
+    border: 1px solid #d5dee7;
+    border-radius: 10px;
     position: relative;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(10px);
-    transition: box-shadow 0.3s ease;
+    transition: border-color 0.2s ease;
   }
   .searchBox:hover {
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+    border-color: #aebdca;
+  }
+  .suggestions {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    z-index: 20;
+    overflow: hidden;
+    border: 1px solid #d5dee7;
+    border-radius: 10px;
+    background: #fff;
+    text-align: left;
+  }
+  .suggestion {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 16px;
+    border: 0;
+    border-bottom: 1px solid #edf1f5;
+    background: #fff;
+    color: #273444;
+    cursor: pointer;
+    font-size: 14px;
+    text-align: left;
+  }
+  .suggestion:last-child {
+    border-bottom: 0;
+  }
+  .suggestion:hover,
+  .suggestion.active {
+    background: #f3f6f8;
+  }
+  .suggestion small {
+    margin-left: auto;
+    color: #718096;
+    font-size: 12px;
   }
   .searchButton {
-    color: #667eea;
+    color: #182230;
     position: absolute;
-    right: 8px;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    right: 6px;
+    width: 44px;
+    height: 44px;
+    border-radius: 7px;
+    background: #f4c430;
     border: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: transform 0.3s ease;
+    transition: background-color 0.2s ease, transform 0.2s ease;
   }
   .searchButton:hover {
-    transform: scale(1.1);
+    background: #ffd866;
+    transform: translateY(-1px);
   }
   .searchInput {
     width: 100%;
     border: none;
     background: none;
     outline: none;
-    color: #333;
-    font-size: 18px;
-    padding: 18px 70px 18px 30px;
-    font-weight: 500;
+    color: #182230;
+    font-size: 16px;
+    padding: 16px 62px 16px 18px;
+    font-weight: 400;
   }
   .searchInput::placeholder {
-    color: #999;
+    color: #718096;
   }
 `;
 
 const FilterPanel = styled.div`
-  margin-top: -34px;
-  margin-bottom: 30px;
+  margin-top: -24px;
+  margin-bottom: 28px;
   position: relative;
   z-index: 12;
   .filter-card {
     background: #ffffff;
     border: 1px solid #e2e8f0;
-    border-radius: 18px;
-    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
-    padding: 18px;
+    border-radius: 16px;
+    padding: 20px;
   }
   .filter-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 8px;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
   }
   .filter-title {
     margin: 0;
@@ -271,10 +294,10 @@ const FilterPanel = styled.div`
   }
   .clear-btn {
     border: 1px solid #cbd5e1;
-    border-radius: 999px;
+    border-radius: 8px;
     background: #f8fafc;
     color: #334155;
-    padding: 7px 12px;
+    padding: 8px 12px;
     font-size: 0.8rem;
     font-weight: 600;
   }
@@ -287,8 +310,8 @@ const FilterPanel = styled.div`
   input {
     width: 100%;
     border: 1px solid #cbd5e1;
-    border-radius: 12px;
-    padding: 10px 12px;
+    border-radius: 8px;
+    padding: 12px;
     color: #0f172a;
     background: #fff;
     font-size: 0.9rem;
@@ -296,65 +319,60 @@ const FilterPanel = styled.div`
   }
   select:focus,
   input:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+    border-color: #b88900;
+    box-shadow: 0 0 0 3px rgba(244, 196, 48, 0.2);
   }
 `;
 
 const CardWrapper = styled.div`
   .property-card {
-    transition:
-      transform 0.3s ease,
-      box-shadow 0.3s ease;
-    border-radius: 20px !important;
-    border: none !important;
+    transition: border-color 0.2s ease;
+    border-radius: 16px !important;
+    border: 1px solid #dce3e9 !important;
     background: #fff;
     overflow: hidden;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
   }
   .property-card:hover {
-    transform: translateY(-15px);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2) !important;
+    border-color: #b8c5d0 !important;
   }
   .img-container {
     overflow: hidden;
-    border-radius: 20px 20px 0 0;
+    border-radius: 16px 16px 0 0;
     position: relative;
   }
   .img-container img {
-    transition: transform 0.5s ease;
+    transition: filter 0.2s ease;
     width: 100%;
-    height: 250px;
+    height: 240px;
     object-fit: cover;
   }
   .property-card:hover .img-container img {
-    transform: scale(1.1);
+    filter: brightness(0.96);
   }
   .price-tag {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #f4c430;
     color: #fff;
-    padding: 8px 16px;
-    border-radius: 50px;
+    padding: 8px 12px;
+    border-radius: 8px;
     font-weight: bold;
     font-size: 1rem;
     position: absolute;
-    bottom: 15px;
-    left: 15px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    bottom: 16px;
+    left: 16px;
   }
   .card-body {
-    padding: 25px;
+    padding: 24px;
   }
   .property-title {
     font-size: 1.4rem;
     font-weight: 700;
     color: #333;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
   }
   .location {
     color: #666;
     font-size: 0.95rem;
-    margin-bottom: 12px;
+    margin-bottom: 16px;
   }
   .description-text {
     -webkit-box-orient: vertical;
@@ -367,9 +385,9 @@ const CardWrapper = styled.div`
     display: flex;
     justify-content: space-between;
     background: #f8f9fa;
-    padding: 15px;
-    border-radius: 15px;
-    margin-bottom: 20px;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 24px;
   }
   .features span {
     display: flex;
@@ -378,8 +396,8 @@ const CardWrapper = styled.div`
     color: #555;
   }
   .features .icon {
-    margin-right: 5px;
-    color: #667eea;
+    margin-right: 8px;
+    color: #b88900;
   }
 
   .is-rented {
@@ -389,12 +407,12 @@ const CardWrapper = styled.div`
   }
   .rented-badge {
     position: absolute;
-    top: 15px;
-    right: 15px;
+    top: 16px;
+    right: 16px;
     background: #ff4d4d;
     color: white;
-    padding: 5px 12px;
-    border-radius: 50px;
+    padding: 6px 10px;
+    border-radius: 8px;
     font-weight: bold;
     z-index: 3;
     font-size: 0.8rem;
@@ -408,30 +426,29 @@ const ButtonWrapper = styled.div`
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 15px 30px;
-    border: 2px solid #667eea;
-    font-size: 16px;
+    padding: 12px 16px;
+    border: 1px solid #b88900;
+    font-size: 14px;
     background-color: #fff;
-    border-radius: 50px;
+    border-radius: 8px;
     font-weight: 600;
-    color: #667eea;
-    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4);
+    color: #8a6700;
     cursor: pointer;
     overflow: hidden;
-    transition: all 0.4s ease;
+    transition: background-color 0.2s ease, color 0.2s ease;
     width: 100%;
     justify-content: center;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    text-transform: none;
+    letter-spacing: 0;
   }
   .animated-button:hover:not(:disabled) {
-    color: #fff;
-    box-shadow: 0 0 0 10px rgba(102, 126, 234, 0.4);
+    color: #182230;
+    background: #f4c430;
   }
   .animated-button .text {
     position: relative;
     z-index: 10;
-    transition: all 0.4s ease;
+    transition: color 0.2s ease;
   }
   .animated-button .circle {
     position: absolute;
@@ -440,33 +457,36 @@ const ButtonWrapper = styled.div`
     transform: translate(-50%, -50%);
     width: 0;
     height: 0;
-    background-color: #667eea;
+    display: none;
     border-radius: 50%;
-    transition: all 0.4s ease;
+    transition: none;
     z-index: 1;
   }
   .animated-button:hover:not(:disabled) .circle {
-    width: 300px;
-    height: 300px;
+    width: 0;
+    height: 0;
   }
   .animated-button svg {
     position: absolute;
-    width: 20px;
-    fill: #667eea;
+    width: 18px;
+    fill: #8a6700;
     z-index: 9;
-    transition: all 0.4s ease;
+    transition: transform 0.25s ease, opacity 0.25s ease;
   }
   .animated-button .arr-1 {
-    right: 20px;
+    right: 16px;
   }
   .animated-button .arr-2 {
-    left: -25%;
+    left: 16px;
+    opacity: 0;
+    transform: translateX(-24px);
   }
   .animated-button:hover:not(:disabled) .arr-1 {
-    right: -25%;
+    transform: translateX(28px);
   }
   .animated-button:hover:not(:disabled) .arr-2 {
-    left: 20px;
+    opacity: 1;
+    transform: translateX(0);
   }
 
   .animated-button:disabled {
@@ -481,6 +501,8 @@ const Home = () => {
   const navigate = useNavigate();
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [suggestionIndex, setSuggestionIndex] = useState(-1);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
@@ -523,6 +545,31 @@ const Home = () => {
     ];
   }, [properties]);
 
+  const searchSuggestions = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return [];
+
+    const suggestions = [];
+    const seen = new Set();
+    properties.forEach((property) => {
+      [
+        { value: property.propertyName, type: "Property" },
+        { value: property.location, type: "Location" },
+      ].forEach(({ value, type }) => {
+        const normalized = value?.trim();
+        if (
+          normalized &&
+          normalized.toLowerCase().includes(query) &&
+          !seen.has(`${type}:${normalized.toLowerCase()}`)
+        ) {
+          seen.add(`${type}:${normalized.toLowerCase()}`);
+          suggestions.push({ value: normalized, type });
+        }
+      });
+    });
+    return suggestions.slice(0, 6);
+  }, [properties, searchTerm]);
+
   const filteredProperties = useMemo(() => {
     return properties.filter(
       (prop) =>
@@ -552,6 +599,35 @@ const Home = () => {
     setMinBedrooms("all");
   };
 
+  const selectSuggestion = (suggestion) => {
+    setSearchTerm(suggestion.value);
+    setSuggestionIndex(-1);
+    setShowSuggestions(false);
+  };
+
+  const handleSearchKeyDown = (event) => {
+    if (!showSuggestions || !searchSuggestions.length) {
+      if (event.key === "Escape") setShowSuggestions(false);
+      return;
+    }
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setSuggestionIndex((index) => (index + 1) % searchSuggestions.length);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setSuggestionIndex(
+        (index) => (index <= 0 ? searchSuggestions.length - 1 : index - 1),
+      );
+    } else if (event.key === "Enter" && suggestionIndex >= 0) {
+      event.preventDefault();
+      selectSuggestion(searchSuggestions[suggestionIndex]);
+    } else if (event.key === "Escape") {
+      setShowSuggestions(false);
+      setSuggestionIndex(-1);
+    }
+  };
+
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth > 768) {
@@ -564,7 +640,7 @@ const Home = () => {
   }, []);
 
   return (
-    <div style={{ backgroundColor: "#f4f7fa", minHeight: "100vh" }}>
+    <div style={{ backgroundColor: "#f5f7f8", minHeight: "100vh" }}>
       <HeroSection>
         <MDBContainer className="content-box">
           <TopNav>
@@ -619,23 +695,66 @@ const Home = () => {
             </div>
           </TopNav>
 
-          <h1 className="fw-bold display-4 mb-3">
-            Find Your <span style={{ color: "#fff" }}>Dream Space</span>
+          <h1>
+            Find Your <span>Dream Space</span>
           </h1>
-          <p className="opacity-75 mb-4">
+          <p>
             Discover curated premium rental properties in your city with ease.
           </p>
           <SearchWrapper>
-            <div className="searchBox shadow-lg">
+            <div className="searchBox">
               <input
                 className="searchInput"
                 type="text"
-                placeholder="Search by location or property name..."
-                onChange={(e) => setSearchTerm(e.target.value)}
+                role="combobox"
+                aria-autocomplete="list"
+                aria-controls="property-search-suggestions"
+                aria-expanded={showSuggestions && searchSuggestions.length > 0}
+                placeholder="Search by location or property name"
+                value={searchTerm}
+                onFocus={() => setShowSuggestions(true)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setSuggestionIndex(-1);
+                  setShowSuggestions(true);
+                }}
+                onKeyDown={handleSearchKeyDown}
               />
               <button className="searchButton">
                 <MDBIcon fas icon="search" />
               </button>
+              {showSuggestions && searchSuggestions.length > 0 && (
+                <div
+                  id="property-search-suggestions"
+                  className="suggestions"
+                  role="listbox"
+                >
+                  {searchSuggestions.map((suggestion, index) => (
+                    <button
+                      type="button"
+                      key={`${suggestion.type}-${suggestion.value}`}
+                      className={`suggestion ${
+                        index === suggestionIndex ? "active" : ""
+                      }`}
+                      role="option"
+                      aria-selected={index === suggestionIndex}
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => selectSuggestion(suggestion)}
+                    >
+                      <MDBIcon
+                        fas
+                        icon={
+                          suggestion.type === "Location"
+                            ? "map-marker-alt"
+                            : "home"
+                        }
+                      />
+                      <span>{suggestion.value}</span>
+                      <small>{suggestion.type}</small>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </SearchWrapper>
         </MDBContainer>
@@ -729,10 +848,10 @@ const Home = () => {
         ) : (
           <MDBRow>
             {filteredProperties.map((prop) => (
-              <MDBCol lg="4" md="6" key={prop._id} className="mb-5">
+              <MDBCol lg="4" md="6" key={prop._id} className="mb-4">
                 <CardWrapper>
                   <MDBCard
-                    className={`property-card shadow-sm ${
+                    className={`property-card ${
                       prop.status === "Occupied" ? "is-rented" : ""
                     }`}
                   >
@@ -775,7 +894,7 @@ const Home = () => {
                           fas
                           icon="map-marker-alt"
                           className="me-2"
-                          style={{ color: "#667eea" }}
+                          style={{ color: "#b88900" }}
                         />
                         {prop.location}
                       </p>
