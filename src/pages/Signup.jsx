@@ -140,6 +140,31 @@ const Signup = () => {
       {/* Right Panel — Form */}
       <div className="flex-1 flex items-center justify-center p-6 sm:p-10">
         <div className="w-full max-w-[420px] animate-[fadeSlideUp_0.5s_ease]">
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            className="group relative mb-8 h-14 w-48 overflow-hidden rounded-2xl border-4 border-white bg-white text-center text-xl font-semibold text-black"
+          >
+            <span className="absolute left-0 top-0 z-10 grid h-12 w-1/4 place-items-center rounded-xl bg-green-400 duration-500 group-hover:w-full">
+              <svg
+                width="25"
+                height="25"
+                viewBox="0 0 1024 1024"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path
+                  fill="#000000"
+                  d="M224 480h640a32 32 0 1 1 0 64H224a32 32 0 1 1 0-64z"
+                />
+                <path
+                  fill="#000000"
+                  d="m237.248 512 265.408 265.344a32 32 0 0 1-45.312 45.312l-288-288a32 32 0 0 1 0-45.312l288-288a32 32 0 1 1 45.312 45.312L237.248 512z"
+                />
+              </svg>
+            </span>
+            {/* <span className="relative z-20 translate-x-4">Go Back</span> */}
+          </button>
           {/* Mobile logo */}
           <div className="flex items-center gap-2 mb-10 lg:hidden">
             <div className="w-9 h-9 bg-emerald-500 rounded-lg flex items-center justify-center">
